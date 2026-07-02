@@ -1,5 +1,0 @@
-C:\SemanticKernel\BasicRagAgent\BasicRagAgent\obj\Debug\net10.0\BasicRagAgent.csproj.AssemblyReference.cache
-C:\SemanticKernel\BasicRagAgent\BasicRagAgent\obj\Debug\net10.0\BasicRagAgent.GeneratedMSBuildEditorConfig.editorconfig
-C:\SemanticKernel\BasicRagAgent\BasicRagAgent\obj\Debug\net10.0\BasicRagAgent.AssemblyInfoInputs.cache
-C:\SemanticKernel\BasicRagAgent\BasicRagAgent\obj\Debug\net10.0\BasicRagAgent.AssemblyInfo.cs
-C:\SemanticKernel\BasicRagAgent\BasicRagAgent\obj\Debug\net10.0\BasicRagAgent.csproj.CoreCompileInputs.cache
