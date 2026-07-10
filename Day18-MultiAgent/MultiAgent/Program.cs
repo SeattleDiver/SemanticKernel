@@ -1,39 +1,94 @@
 ﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
+using Microsoft.SemanticKernel.Agents.Chat;
+using Microsoft.SemanticKernel.ChatCompletion;
 
-namespace MultiAgent
+namespace Day18NativeOrchestration
 {
+
     class Program
     {
         static async Task Main(string[] args)
         {
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY key is missing");
+            // 1. Setup the Kernel
+            IKernelBuilder builder = Kernel.CreateBuilder();
 
-            var builder = Kernel.CreateBuilder();
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new Exception("Missing Key");
+            
             builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
 
             Kernel kernel = builder.Build();
 
-            // 1. Define the copywriter agent
-            ChatCompletionAgent copywriter = new ChatCompletionAgent()
-            {
-                Name = "Copywriter",
-                Instructions = "You write catchy 5-word marketing slogans.  Generate one and wait for feedback.",
-                Kernel = kernel
-            };
+            // 2. Get the chat service
+            IChatCompletionService chatService = kernel.GetRequiredService<IChatCompletionService>();
 
-            ChatCompletionAgent editor = new ChatCompletionAgent()
-            {
-                Name = "Editor",
-                Instructions = "You review slogans.  If they are good, say 'APPROVED'.  If not, suggest one improvement.",
-                Kernel = kernel
-            };
+            // 3. Define the Specialist Personas
+            string copywriterPersona = "You are a creative copywriter.  Write a punch 5-word slogan for the product provided.";
+            string editorPersona = "You are a brand editor.  Review the slogan.  If it's perfect, say 'APPROVED'.  If not, provide one suggestion";
 
-            #pragma warning disable SKEXP0110
-            AgentGroupChat chat = new AgentGroupChat()
+            // 4. Shared conversation history
+            ChatHistory chatHistory = new ChatHistory();
+
+            Console.WriteLine("Enter a product to market:");
+            string? product = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(product)) return;
+            chatHistory.AddUserMessage($"Product: {product}");
+
+            bool isComplete = false;
+            int currentIteration = 0;
+            int MaxIterations = 4;
+
+            Console.WriteLine("\n Multi-Agent collaboration started...");
+
+            while (!isComplete && currentIteration < MaxIterations)
             {
-            };
+                // ---------------------------
+                // Copywriter turn
+                // ---------------------------
+
+                // Inject the persona at index 0
+                chatHistory.Insert(0, new ChatMessageContent(AuthorRole.System, copywriterPersona));
+                var copywriterResult = await chatService.GetChatMessageContentAsync(chatHistory, kernel: kernel);
+
+                // Cleanup the system Persona at index 0
+                chatHistory.RemoveAt(0);
+
+                string slogan = copywriterResult.Content ?? "No slogan generated.";
+                chatHistory.AddAssistantMessage(slogan);
+                Console.WriteLine($"\n[COPYWRITER]: {slogan}");
+
+                // --- GEMINI PROTOCOL NUDGE ---
+                // Gemini requires User -> Assistant alternating conversation
+                // We add a 'User' instruction to prepare for the Editor's turn
+                chatHistory.AddUserMessage("Editor, please review the slogan above.");
+
+                // ---------------------------
+                // Editor turn
+                // ---------------------------
+                chatHistory.Insert(0, new ChatMessageContent(AuthorRole.System, editorPersona));
+
+                var editorResult = await chatService.GetChatMessageContentAsync(chatHistory, kernel: kernel);
+
+                chatHistory.RemoveAt(0);
+
+                string review = editorResult.Content ?? "No review generated.";
+                chatHistory.AddAssistantMessage(review);
+                Console.WriteLine($"\n[EDITOR]: {review}");
+
+                if (review.Contains("APPROVED", StringComparison.OrdinalIgnoreCase))
+                {
+                    isComplete = true;
+                }
+                else
+                {
+                    chatHistory.AddUserMessage("Copywriter, please refine the slogan based on that feedback.");
+                }
+
+                currentIteration++;
+            }
+
+            Console.WriteLine(isComplete ? "\nWorkflow Finalized." : "\nMax iterations reached.");
         }
     }
 }

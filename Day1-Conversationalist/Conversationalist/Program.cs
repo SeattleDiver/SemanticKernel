@@ -29,7 +29,7 @@ namespace Conversationalist
 
             while(true)
             {
-                Console.Write("User: ");
+                Console.Write("\nUser: ");
                 string? userInput = Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(userInput))
