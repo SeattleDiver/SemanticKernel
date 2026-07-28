@@ -5,7 +5,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace Day6FileManager
 {
@@ -53,7 +53,7 @@ namespace Day6FileManager
             string path = Path.Combine(_currentDirectory, fileName);
             await File.WriteAllTextAsync(path, content);
 
-            return "Success: The file '{fileName}' was successfully created and written";
+            return $"Success: The file '{fileName}' was successfully created and written";
         }
     }
 
@@ -65,11 +65,12 @@ namespace Day6FileManager
             SetupDummyLogFile();
 
             // Step 3: Initialize the Kernel with our model
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
-            string model = "gemini-2.5-flash";
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY environment variable not set.");
+            string model = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
             var builder = Kernel.CreateBuilder();
-            builder.AddGoogleAIGeminiChatCompletion(model, apiKey);
+            builder.AddOpenAIChatCompletion(model, apiKey);
 
             // Step 4: Add our file system plugin
             builder.Plugins.AddFromObject(new FileSystemPlugin(), "FileSystem");
@@ -80,9 +81,9 @@ namespace Day6FileManager
             string prompt = "Look in the current directory for a server log file.  Read its contents, figure out what errors occurred, and write a summary of those errors into a new file called 'error_summary.txt'.";
 
             // Step 6: Enable Auto-Invocation so the AI can chain the tools
-            var executionSettings = new GeminiPromptExecutionSettings
+            var executionSettings = new OpenAIPromptExecutionSettings
             {
-                ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions,
+                FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
                 Temperature = 0.0
             };
 
