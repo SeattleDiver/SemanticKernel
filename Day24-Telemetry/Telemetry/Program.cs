@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 
@@ -27,10 +27,14 @@ namespace Telemetry
             // 2. Initialize the Kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
 
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
+
+            // Register our mock plugin
+            builder.Plugins.AddFromType<SlowWeatherPlugin>();
 
             Kernel kernel = builder.Build();
 
@@ -40,8 +44,8 @@ namespace Telemetry
             // Be enabling AutoInvoke, Semantic Kernel will automatically handle the tool loop.
             // This generates multiple telemetry spans: one for the initial LLM call,
             // one for the plugin execution, and one for the final LLM summary.
-            GeminiPromptExecutionSettings settings = new GeminiPromptExecutionSettings();
-            settings.ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions;
+            OpenAIPromptExecutionSettings settings = new OpenAIPromptExecutionSettings();
+            settings.FunctionChoiceBehavior = FunctionChoiceBehavior.Auto();
 
             KernelArguments arguments = new KernelArguments(settings);
             string prompt = "What is the weather like in Seattle right now?";

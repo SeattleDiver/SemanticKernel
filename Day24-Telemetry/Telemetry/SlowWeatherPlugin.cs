@@ -1,7 +1,7 @@
 ﻿using Microsoft.SemanticKernel;
 using System.ComponentModel;
 
-namespace Telementry
+namespace Telemetry
 {
     internal class SlowWeatherPlugin
     {
