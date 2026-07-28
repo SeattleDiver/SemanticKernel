@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace MultiToolAgent
 {
@@ -18,7 +18,7 @@ namespace MultiToolAgent
         }
     }
 
-    public class WeatherPlugIn
+    public class WeatherPlugin
     {
         [KernelFunction("GetWeather")]
         [Description("Gets the current weather for a specific city.")]
@@ -34,23 +34,24 @@ namespace MultiToolAgent
         static async Task Main(string[] strings)
         {
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY was not found");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY was not found");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
-            // 2. Setup Gemini
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            // 2. Setup OpenAI
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
 
             // 3. Register the plugins
             builder.Plugins.AddFromType<TimePlugin>("Time");
-            builder.Plugins.AddFromType<WeatherPlugIn>("Weather");
+            builder.Plugins.AddFromType<WeatherPlugin>("Weather");
 
             Kernel kernel = builder.Build();
 
-            // 4. Set the ToolCallBehavior to AutoInvokeKernelFunctions
+            // 4. Set the FunctionChoiceBehavior to Auto
             // This is what makes it "Agentic" - the Kernel handles the tool-loop
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
-                ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
+                FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
             };
 
             string userRequest = "What time is it, and should I bring an umbrella in Salt Lake City today?";
