@@ -13,9 +13,10 @@ namespace Day18NativeOrchestration
             // 1. Setup the Kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
 
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new Exception("Missing Key");
-            
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new Exception("Missing Key");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
+
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
 
             Kernel kernel = builder.Build();
 
@@ -58,9 +59,12 @@ namespace Day18NativeOrchestration
                 chatHistory.AddAssistantMessage(slogan);
                 Console.WriteLine($"\n[COPYWRITER]: {slogan}");
 
-                // --- GEMINI PROTOCOL NUDGE ---
-                // Gemini requires User -> Assistant alternating conversation
-                // We add a 'User' instruction to prepare for the Editor's turn
+                // --- ROLE ALTERNATION NUDGE ---
+                // This originated as a workaround for Gemini's strict requirement that
+                // chat history alternate User -> Assistant -> User. Plain OpenAI chat
+                // completions don't enforce that alternation, so this nudge is no longer
+                // strictly required here - it's kept because it's harmless and still
+                // reads naturally as "handing off" to the next agent.
                 chatHistory.AddUserMessage("Editor, please review the slogan above.");
 
                 // ---------------------------
