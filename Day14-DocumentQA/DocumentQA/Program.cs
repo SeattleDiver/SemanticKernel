@@ -2,7 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace DocumentQA
 {
@@ -12,10 +12,11 @@ namespace DocumentQA
         {
             // 1. Setup the Kernel
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY was not found");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY was not found");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
             Kernel kernel = builder.Build();
 
             // 2. Simulate or load a large document
@@ -50,7 +51,7 @@ Assistant: (Cite the section number in your answer)
 
                 // 4. Execution settings
                 // we keep temperature low (0.0) for factual QA tasks.
-                var executionSettings = new GeminiPromptExecutionSettings { Temperature = 0.0 };
+                var executionSettings = new OpenAIPromptExecutionSettings { Temperature = 0.0 };
                 var arguments = new KernelArguments(executionSettings)
                 {
                     { "documentContent", longDocument },
