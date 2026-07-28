@@ -4,7 +4,7 @@ using System.ComponentModel;
 namespace Calculator
 {
     // Step 1: Define the Native C# Plugin
-    public class MathPlugIn
+    public class MathPlugin
     {
         [KernelFunction("Add")]
         [Description("Adds two numbers together.")]
