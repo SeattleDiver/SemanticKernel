@@ -9,10 +9,11 @@ namespace HumanInTheLoop
         {
             // 1. Init the kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-3.1-pro-preview", apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -28,7 +29,7 @@ namespace HumanInTheLoop
             Console.Write("What is the top of the announcement? ");
             string? topic = Console.ReadLine();
 
-            // The initial prompt sets the first 'User' role for Gemini
+            // The initial prompt sets the first 'User' role in the conversation
             history.AddUserMessage($"Draft an email announcement regarding: {topic}");
 
             bool isApproved = false;
@@ -51,8 +52,8 @@ namespace HumanInTheLoop
                 }
                 else
                 {
-                    // GEMINI PROTOCOL: The human's feedback naturally acts as the 'User' role,
-                    // perfectly satisfying Gemini's User -> Assistant -> User requirement.
+                    // The human's feedback naturally acts as the 'User' role, keeping the
+                    // conversation in a natural User -> Assistant -> User rhythm.
                     history.AddUserMessage($"The draft was rejected.  Please review based on this feedback: {result.Feedback}");
                     Console.WriteLine("\nSending feedback to  the AI...");
                 }

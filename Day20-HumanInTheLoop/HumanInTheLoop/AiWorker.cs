@@ -4,7 +4,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 namespace HumanInTheLoop
 {
     /// <summary>
-    /// Encapsulates the AI Persona and the Native Orchestration logic required to communicate with Gemini
+    /// Encapsulates the AI Persona and the Native Orchestration logic required to communicate with the chat model
     /// </summary>
     internal class AiWorker
     {
@@ -23,7 +23,7 @@ namespace HumanInTheLoop
             var systemMessage = new ChatMessageContent(AuthorRole.System, _persona);
             history.Insert(0, systemMessage);
 
-            // 2. enerate the draft using Gemini
+            // 2. Generate the draft using the chat model
             var result = await _chatService.GetChatMessageContentAsync(history);
             string draft = result.Content ?? "No draft generated.";
 
