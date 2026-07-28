@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
-using OpenAI.Chat;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace FormatTranslator
 {
@@ -10,12 +9,12 @@ namespace FormatTranslator
     {
         static async Task Main(string[] args)
         {
-            // Step 1. Init the kernel with Gemini 2.5 flash
+            // Step 1. Init the kernel with an OpenAI chat model
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
-            string modelId = "gemini-2.5-flash";
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
-            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
             Kernel kernel = builder.Build();
 
             // Step 2. Defind the unstrucured input and the prompt template
@@ -38,7 +37,7 @@ User: Translate this text into JSON:
 {{$input}}
 ";
             // Step 4. Configure Execution Settings to eliminate creativity
-            var executionSettings = new GeminiPromptExecutionSettings()
+            var executionSettings = new OpenAIPromptExecutionSettings()
             {
                 Temperature = 0.0, // Eliminate randomness
                 TopP = 0.1
