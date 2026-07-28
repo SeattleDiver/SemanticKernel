@@ -1,12 +1,11 @@
 ﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
 
-namespace Day16ManualReAct
+namespace ManualReActLoop
 {
     public class ResearchPlugin
     {
@@ -30,8 +29,9 @@ namespace Day16ManualReAct
         static async Task Main(string[] args)
         {
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new Exception("Missing key");
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new Exception("Missing key");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
 
             // 1. Add stateful object
             var myResearchTool = new ResearchPlugin();
@@ -55,7 +55,7 @@ namespace Day16ManualReAct
             for (int i = 0; i < 5; i++)
             {
                 // Request next step from AI (Enable Call but DON'T Auto-Invoke)
-                var settings = new GeminiPromptExecutionSettings { ToolCallBehavior = GeminiToolCallBehavior.EnableKernelFunctions };
+                var settings = new OpenAIPromptExecutionSettings { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(autoInvoke: false) };
                 var result = await chatService.GetChatMessageContentAsync(history, settings, kernel);
 
                 if (string.IsNullOrEmpty(result.Content)) continue;
