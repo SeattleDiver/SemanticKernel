@@ -1,5 +1,6 @@
 ﻿using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using ChatResponseFormat = OpenAI.Chat.ChatResponseFormat;
 using System.Text.Json;
 
 namespace SemanticRouter
@@ -34,10 +35,10 @@ namespace SemanticRouter
             history.AddSystemMessage(_routerPrompt);
             history.AddUserMessage(userInput);
 
-            // Force Gemini to output structured JSON deterministically
-            var settings = new GeminiPromptExecutionSettings
+            // Force structured JSON output deterministically
+            var settings = new OpenAIPromptExecutionSettings
             {
-                ResponseMimeType = "application/json",
+                ResponseFormat = ChatResponseFormat.CreateJsonObjectFormat(),
                 Temperature = 0.0
             };
 

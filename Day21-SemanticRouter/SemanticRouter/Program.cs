@@ -9,11 +9,11 @@ namespace SemanticRouter
         {
             // 1. Init the base kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
-            //builder.AddGoogleAIGeminiChatCompletion("gemini-3.1-pro-preview", apiKey);
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
             Kernel baseKernel = builder.Build();
 
             // 2. Init our clean, decoupled components

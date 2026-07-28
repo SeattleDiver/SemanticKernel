@@ -1,5 +1,5 @@
 ﻿using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System.ComponentModel;
 
 namespace SemanticRouter
@@ -26,7 +26,7 @@ namespace SemanticRouter
 
         public async Task<string> HandleAsync(string input)
         {
-            var settings = new GeminiPromptExecutionSettings { ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions };
+            var settings = new OpenAIPromptExecutionSettings { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto() };
             string prompt = $"You are a billing agent.  Provide the user with their financial data.  User: {input}";
 
             var result = await _isolatedKernel.InvokePromptAsync(prompt, new KernelArguments(settings));
