@@ -1,7 +1,7 @@
 ﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace AgentFramework
 {
@@ -11,10 +11,11 @@ namespace AgentFramework
         {
             // 1. Setup the kernel
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
             Kernel kernel = builder.Build();
 
             // 2. Create the ChatCompletionAgent
@@ -25,7 +26,7 @@ namespace AgentFramework
                                "Your goal is to help users find the bets destinations based on their budget. " +
                                "Alwasy provide three options: Budget, Mid-range, and Luxury",
                 Kernel = kernel,
-                Arguments = new KernelArguments(new GeminiPromptExecutionSettings {  Temperature = 0.5 })
+                Arguments = new KernelArguments(new OpenAIPromptExecutionSettings {  Temperature = 0.5 })
             };
 
             // 3. Define the conversation
