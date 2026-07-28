@@ -1,6 +1,7 @@
 ﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using ChatResponseFormat = OpenAI.Chat.ChatResponseFormat;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -21,16 +22,18 @@ namespace CoordinatorPro
         static async Task Main(string[] args)
         {
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
             var resilientHttpClient = new HttpClient(new RetryHandler(maxRetries: 5));
 
-            // Upgrade to Gemini 3.1 Pro for advanced reasoning tasks.  Also, we've included a resilient HTTP
-            // retry handler to deal with Google's occasional outages (503 Service Unavailable)
-            builder.AddGoogleAIGeminiChatCompletion(
-                //modelId: "gemini-3.1-pro-preview", 
-                modelId: "gemini-2.5-flash",
+            // This "meta-agent" episode benefits from a stronger model for its routing
+            // reasoning - point OPENAI_CHAT_MODEL at a higher-tier deployment (e.g. gpt-4o)
+            // if you want to demonstrate that. We've also included a resilient HTTP retry
+            // handler to deal with occasional upstream 503/500/429 responses.
+            builder.AddOpenAIChatCompletion(
+                modelId: modelId,
                 apiKey: apiKey,
                 httpClient: resilientHttpClient);
 
@@ -66,9 +69,9 @@ namespace CoordinatorPro
             int iteration = 0;
             int maxIterations = 8;
 
-            var coordSettings = new GeminiPromptExecutionSettings()
+            var coordSettings = new OpenAIPromptExecutionSettings()
             {
-                ResponseMimeType = "application/json",
+                ResponseFormat = ChatResponseFormat.CreateJsonObjectFormat(),
                 Temperature = 0.0
             };
 
@@ -78,7 +81,9 @@ namespace CoordinatorPro
                 // The COORDINATOR decides
                 // ------------------------------------
 
-                // The "Ghost Nudge": Add a temporary user message to satisfy Gemini's alternation rule
+                // The "Ghost Nudge": add a temporary user message to trigger the Coordinator's
+                // turn (originated as a workaround for Gemini's strict alternation rule; kept
+                // here since it's harmless under OpenAI too and reads naturally as a hand-off)
                 var ghostNudge = new ChatMessageContent(AuthorRole.User, "Coordinator, evaluate the state and output the JSON routing decision.");
                 history.Add(ghostNudge);
 
