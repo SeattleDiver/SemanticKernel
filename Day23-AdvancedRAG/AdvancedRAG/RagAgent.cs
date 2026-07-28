@@ -1,5 +1,5 @@
 ﻿using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 
 namespace AdvancedRAG
@@ -33,11 +33,11 @@ namespace AdvancedRAG
                 CONTEXT:
                 - {combinedContext}
 
-                QUESTION: {question} {combinedContext}
+                QUESTION: {question}
                 ";
 
             // 3. Execute with low temperature for factual grounding
-            var executionSettings = new GeminiPromptExecutionSettings
+            var executionSettings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.0
             };

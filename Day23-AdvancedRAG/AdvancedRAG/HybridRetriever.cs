@@ -40,7 +40,7 @@ namespace AdvancedRAG
                 .Take(topK);
 
             // 3. Deduplicate and Merge
-            // Combine both lists and remove duplicates so we don't waste Gemini tokens
+            // Combine both lists and remove duplicates so we don't waste model tokens
             var combinedResults = vectorResults
                 .Union(keywordResults)
                 .Select(d => d.Content)
