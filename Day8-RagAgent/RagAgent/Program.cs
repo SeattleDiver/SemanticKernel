@@ -1,7 +1,10 @@
 ﻿using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 
-namespace BasicRagAgent
+// AddOpenAIEmbeddingGenerator is still marked experimental by the Semantic Kernel team.
+#pragma warning disable SKEXP0010
+
+namespace RagAgent
 {
     public class KnowledgeDocument
     {
@@ -15,13 +18,14 @@ namespace BasicRagAgent
         {
             // Step 2: Initialize the Kernel with Both Chat and Embedding models
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
-            string modelId = "gemini-2.5-flash";
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
+            string embeddingModelId = Environment.GetEnvironmentVariable("OPENAI_EMBEDDING_MODEL") ?? "text-embedding-3-small";
 
             // Add the chat model and embedding model to the kernel
-            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
-            builder.AddGoogleAIEmbeddingGenerator("gemini-embedding-001", apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
+            builder.AddOpenAIEmbeddingGenerator(embeddingModelId, apiKey);
 
             Kernel kernel = builder.Build();
 
@@ -61,7 +65,7 @@ namespace BasicRagAgent
                 .OrderByDescending(doc => CalculateCosineSimilarity(doc.Vector.Span, questionVector.Span))
                 .FirstOrDefault();
 
-            Console.WriteLine("$[RAG RETRIEVAL] Found relevant document: {bestMatch?.Text}");
+            Console.WriteLine($"[RAG RETRIEVAL] Found relevant document: {bestMatch?.Text}");
 
             // Step 8: Build the RAG prompt
             string promptTemplate = @"
