@@ -3,7 +3,7 @@
 namespace FunctionFilters
 {
     /// <summary>
-    /// Intercepts the prompt after varaiables are injected, but berfore it reaches Gemini
+    /// Intercepts the prompt after varaiables are injected, but berfore it reaches the model
     /// </summary>
     internal class PromptLoggingFilter : IPromptRenderFilter
     {
@@ -13,7 +13,7 @@ namespace FunctionFilters
             await next(context);
 
             // Now that it's rendered, we can inspect or modify it
-            Console.Write("\n[PROMPT LOGGER] Intercepted payload headed to Gemini:");
+            Console.Write("\n[PROMPT LOGGER] Intercepted payload headed to the model:");
             Console.WriteLine(context.RenderedPrompt);
         }
     }

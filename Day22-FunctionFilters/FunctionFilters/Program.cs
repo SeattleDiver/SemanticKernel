@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace FunctionFilters
 {
@@ -9,10 +9,11 @@ namespace FunctionFilters
         static async Task Main(string[] args)
         {
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
 
             // 1. Register our Custom Filters via Dependency Injection
             builder.Services.AddSingleton<IPromptRenderFilter, PromptLoggingFilter>();
@@ -29,13 +30,13 @@ namespace FunctionFilters
             Console.WriteLine($"\nUser: {userRequest}");
 
             // 3. Execute with AutoInvoke so the LLM triggers the function filter
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
-                ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
+                FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
             };
 
-            // This single line triggers the prompt fileter, the Gemini API,
-            // the function filter, the C# tool, and the final Gemini summary!
+            // This single line triggers the prompt filter, the OpenAI API,
+            // the function filter, the C# tool, and the final OpenAI summary!
             var result = await kernel.InvokePromptAsync(userRequest, new KernelArguments(settings));
 
             Console.WriteLine($"\n[AI FINAL RESPONSE]: {result}");
