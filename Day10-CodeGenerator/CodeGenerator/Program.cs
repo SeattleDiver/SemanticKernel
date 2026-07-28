@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace CodeGenerator
 {
@@ -10,12 +10,13 @@ namespace CodeGenerator
     {
         static async Task Main(string[] args)
         {
-            // 1. Setup kernel with Gemini Flash 2.5
+            // 1. Setup kernel with an OpenAI chat model
             var builder = Kernel.CreateBuilder();
-            var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
+            var modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -45,7 +46,7 @@ namespace CodeGenerator
                 chatHistory.AddUserMessage($"Write a c# implemenation for: {userRequest}");
                 Console.WriteLine("\n --- Generating code ---\n");
 
-                var settings = new GeminiPromptExecutionSettings
+                var settings = new OpenAIPromptExecutionSettings
                 {
                     Temperature = 0.2,
                     TopP = 0.1
