@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace Interviewer
 {
@@ -10,19 +10,16 @@ namespace Interviewer
     {
         static async Task Main(string[] args)
         {
-            // 1. Initialize the Kernel with Gemini 2.5 flash
+            // 1. Initialize the Kernel with an OpenAI chat model
             var builder = Kernel.CreateBuilder();
 
-            string apikey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ??
-                throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+            string apikey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ??
+                throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
+            string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
-            var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("x-goog-api-key", apikey);
-
-            builder.AddGoogleAIGeminiChatCompletion(
-                apiKey: apikey, 
-                modelId: "gemini-2.5-flash",
-                httpClient: httpClient);
+            builder.AddOpenAIChatCompletion(
+                apiKey: apikey,
+                modelId: modelId);
 
             Kernel kernel = builder.Build();
 
@@ -44,8 +41,14 @@ namespace Interviewer
 
             Console.WriteLine("--- Interview Mode started ---");
 
+            // Consistent execution settings for every model call in this conversation
+            var executionSettings = new OpenAIPromptExecutionSettings
+            {
+                Temperature = 0.7,
+            };
+
             // 4. Initial propt to trigger the first question
-            var response = await chatService.GetChatMessageContentAsync(chatHistory, kernel: kernel);
+            var response = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel: kernel);
             Console.WriteLine($"Interviewer: {response.Content}");
             chatHistory.AddAssistantMessage(response.Content);
 
@@ -62,10 +65,6 @@ namespace Interviewer
                 chatHistory.AddUserMessage(candidateAnswer);
 
                 // Get the next response based on the full history
-                var executionSettings = new GeminiPromptExecutionSettings
-                {
-                    Temperature = 0.7,
-                };
                 var nextQuestion = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel: kernel);
                 Console.WriteLine($"\nInterviewer: {nextQuestion.Content}");
 
