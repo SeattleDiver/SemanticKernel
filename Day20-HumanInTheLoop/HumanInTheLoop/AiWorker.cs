@@ -1,4 +1,9 @@
-﻿using Microsoft.SemanticKernel;
+﻿// AiWorker
+// ---------------------------------------------------------------------------
+// Encapsulates the AI persona and the persona-swapping orchestration logic
+// (inject system message, generate, remove system message) so Program.cs can
+// stay a clean, high-level orchestration script.
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace HumanInTheLoop

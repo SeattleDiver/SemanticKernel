@@ -1,4 +1,11 @@
-﻿using System;
+﻿// Day 14: Document QA
+// ---------------------------------------------------------------------------
+// Grounded question-answering via full-context stuffing: the entire "manual"
+// is pasted directly into the prompt on every turn, and the model is told to
+// answer only from it (and admit when it can't). No retrieval is involved -
+// this is the brute-force contrast to the retrieval-based RAG approach shown
+// in Day 8 and Day 23.
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;

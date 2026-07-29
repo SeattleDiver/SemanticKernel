@@ -1,4 +1,11 @@
-﻿using System;
+﻿// Day 15: Multi-Tool Agent
+// ---------------------------------------------------------------------------
+// Registers two independent plugins (Time, Weather) and lets the model
+// decide, on its own, which one (or both) a single request actually needs.
+// The sample question requires both tools in the same turn - this is the
+// clearest demonstration in the series of real tool *selection*, not just
+// tool *execution*.
+using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
@@ -18,7 +25,7 @@ namespace MultiToolAgent
         }
     }
 
-    public class WeatherPlugIn
+    public class WeatherPlugin
     {
         [KernelFunction("GetWeather")]
         [Description("Gets the current weather for a specific city.")]
@@ -42,7 +49,7 @@ namespace MultiToolAgent
 
             // 3. Register the plugins
             builder.Plugins.AddFromType<TimePlugin>("Time");
-            builder.Plugins.AddFromType<WeatherPlugIn>("Weather");
+            builder.Plugins.AddFromType<WeatherPlugin>("Weather");
 
             Kernel kernel = builder.Build();
 

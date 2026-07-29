@@ -1,4 +1,9 @@
-﻿using System.Text.Json.Serialization;
+﻿// RouteDecision
+// ---------------------------------------------------------------------------
+// Plain data-transfer object mapped from the router's forced-JSON response
+// via JsonSerializer. No provider-specific code here - just the shape of the
+// decision every part of the app agrees on.
+using System.Text.Json.Serialization;
 
 namespace SemanticRouter
 {

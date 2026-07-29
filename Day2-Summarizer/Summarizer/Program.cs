@@ -1,4 +1,10 @@
-﻿using Microsoft.SemanticKernel;
+﻿// Day 2: The Summarizer
+// ---------------------------------------------------------------------------
+// Transitions from an open-ended chatbot (Day 1) to a specialized "Reduction
+// Agent": reads a text file and reduces it to a 3-bullet summary. Introduces
+// Prompt Templates (the {{$variable}} syntax), KernelArguments, and
+// InvokePromptAsync as a one-shot alternative to the ChatHistory loop.
+using Microsoft.SemanticKernel;
 
 namespace Summarizer
 {

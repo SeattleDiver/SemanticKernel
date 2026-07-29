@@ -1,10 +1,17 @@
-﻿using Microsoft.SemanticKernel;
+﻿// MathPlugin
+// ---------------------------------------------------------------------------
+// A native C# plugin exposing basic arithmetic to the model. The
+// [KernelFunction] attribute exposes each method to Semantic Kernel; the
+// [Description] attributes are not just documentation for humans - Semantic
+// Kernel sends them to the model as a "tool manifest" so it knows which
+// function to call and what arguments to pass.
+using Microsoft.SemanticKernel;
 using System.ComponentModel;
 
 namespace Calculator
 {
     // Step 1: Define the Native C# Plugin
-    public class MathPlugIn
+    public class MathPlugin
     {
         [KernelFunction("Add")]
         [Description("Adds two numbers together.")]

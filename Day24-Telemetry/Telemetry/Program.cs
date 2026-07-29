@@ -1,4 +1,14 @@
-﻿using System;
+﻿// Day 24: Telemetry & Observability
+// ---------------------------------------------------------------------------
+// The series capstone: wires OpenTelemetry into Semantic Kernel's own
+// diagnostic ActivitySource so every prompt render, model call, and plugin
+// execution shows up as a traced span with real durations.
+// SlowWeatherPlugin's artificial delay makes the tool-execution span clearly
+// distinct from the surrounding LLM-call spans in the console output. This
+// is provider-agnostic by construction - OTel listens to SK's own
+// instrumentation, not to Gemini specifically, so the tracing keeps working
+// identically no matter which connector is registered below.
+using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Google;
@@ -31,6 +41,9 @@ namespace Telemetry
                 ?? throw new Exception("GEMINI_API_KEY is missing");
 
             builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+
+            // Register our mock plugin
+            builder.Plugins.AddFromType<SlowWeatherPlugin>();
 
             Kernel kernel = builder.Build();
 

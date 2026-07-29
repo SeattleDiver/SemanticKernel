@@ -1,4 +1,11 @@
-﻿using Microsoft.SemanticKernel;
+﻿// Day 20: Human-in-the-Loop
+// ---------------------------------------------------------------------------
+// A production-critical pattern: certain AI-generated actions (here, a
+// corporate email announcement) should never ship fully autonomously. This
+// wires an AI drafting agent (AiWorker.cs) to a hard human approval gate
+// (HumanGatekeeper.cs) that the model cannot talk its way past - only an
+// explicit "APPROVED" from a human ends the loop.
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace HumanInTheLoop
@@ -12,7 +19,7 @@ namespace HumanInTheLoop
             string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
                 ?? throw new Exception("GEMINI_API_KEY is missing");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-3.1-pro-preview", apiKey);
+            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();

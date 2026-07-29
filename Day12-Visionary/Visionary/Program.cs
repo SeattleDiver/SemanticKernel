@@ -1,4 +1,11 @@
-﻿using System;
+﻿// Day 12: The Visionary
+// ---------------------------------------------------------------------------
+// Multimodal input: builds a ChatMessageContentItemCollection combining a
+// text instruction with image bytes (TextContent + ImageContent) so the
+// model can analyze a chart image instead of just reading text. These
+// content types are plain Semantic Kernel abstractions, not Gemini-specific -
+// only the connector registration below is provider-specific.
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
@@ -26,14 +33,18 @@ namespace Visionary
                 "Your goal is to describe images with extreme detail and extract any text or data points visible.");
 
             // 3. Prepare the Multimodal Message
-            // For this example, we use a public URL of a sample chart/image
-            string imageUrl = "https://hustleescape.com/wp-content/uploads/2020/06/Financial-Independence-Chart-1024x528.png";
-            Console.WriteLine($"Analyzing Image {imageUrl}");
+            // We bundle a local sample chart image with the project rather than fetching one
+            // from a third-party URL, so this demo doesn't silently break if that page ever
+            // moves or the image is taken down.
+            string imagePath = Path.Combine(AppContext.BaseDirectory, "Assets", "sample-chart.png");
+            Console.WriteLine($"Analyzing Image {imagePath}");
+
+            byte[] imageBytes = await File.ReadAllBytesAsync(imagePath);
 
             var messageItems = new ChatMessageContentItemCollection
             {
                 new TextContent("Analyze this image.  Identify the type of chart, the key data points, and summarize the main trend."),
-                new ImageContent(new Uri(imageUrl)) { MimeType = "image/png" }
+                new ImageContent(imageBytes, "image/png")
             };
 
             chatHistory.AddUserMessage(messageItems);

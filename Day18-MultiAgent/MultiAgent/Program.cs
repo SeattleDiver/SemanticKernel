@@ -1,4 +1,12 @@
-﻿using Microsoft.SemanticKernel;
+﻿// Day 18: Native Multi-Agent Orchestration
+// ---------------------------------------------------------------------------
+// Two agents (Copywriter, Editor) collaborating over a single shared
+// ChatHistory via manual "persona swapping" - inserting a System message at
+// index 0 right before each agent speaks, then removing it once the reply
+// comes back. A plain C# while loop drives the whole thing, so the
+// hand-off logic between agents stays fully visible instead of being hidden
+// inside a framework.
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.Agents.Chat;
 using Microsoft.SemanticKernel.ChatCompletion;

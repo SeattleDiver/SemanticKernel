@@ -1,4 +1,9 @@
-﻿namespace HumanInTheLoop
+﻿// HumanGatekeeper
+// ---------------------------------------------------------------------------
+// The hard stop the AI cannot bypass: blocks on console input and only
+// returns IsApproved = true for an exact "APPROVED" match. Anything else is
+// treated as feedback and routed back to the AI for another draft.
+namespace HumanInTheLoop
 {
     /// <summary>
     /// Represents the result of a human review.

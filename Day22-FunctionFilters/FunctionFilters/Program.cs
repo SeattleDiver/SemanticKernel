@@ -1,4 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿// Day 22: Prompt and Function Filters
+// ---------------------------------------------------------------------------
+// Semantic Kernel Filters - think ASP.NET Core middleware, but for AI calls.
+// IPromptRenderFilter (PromptLoggingFilter.cs) intercepts the fully-rendered
+// prompt right before it leaves the process; IFunctionInvocationFilter
+// (AuditFunctionFilter.cs) wraps every plugin call with timing/audit logic.
+// Both are registered once via DI and then apply to every prompt/tool call
+// automatically - SecureDatabasePlugin.cs itself stays free of any
+// logging/observability code.
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Google;
 

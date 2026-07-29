@@ -1,7 +1,12 @@
-﻿using Microsoft.SemanticKernel;
+﻿// SlowWeatherPlugin
+// ---------------------------------------------------------------------------
+// A mock plugin with a deliberate artificial delay, so its telemetry span
+// shows up with a clearly distinguishable duration from the surrounding
+// model-call spans when viewing the OpenTelemetry trace output.
+using Microsoft.SemanticKernel;
 using System.ComponentModel;
 
-namespace Telementry
+namespace Telemetry
 {
     internal class SlowWeatherPlugin
     {

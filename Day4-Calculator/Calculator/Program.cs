@@ -1,4 +1,10 @@
-﻿using Microsoft.SemanticKernel;
+﻿// Day 4: The Calculator
+// ---------------------------------------------------------------------------
+// LLMs are prediction engines, not calculators - they're notoriously bad at
+// precise arithmetic. This episode fixes that by wrapping real C# math in a
+// native plugin (see MathPlugIn.cs) and enabling auto tool-invocation, so the
+// model can pause generation, call our code for the exact answer, and resume.
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Google;
 using System.ComponentModel;
 
@@ -18,14 +24,17 @@ namespace Calculator
             builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
 
             // Step 3: Load the native plug in
-            builder.Plugins.AddFromType<MathPlugIn>("Math");
+            builder.Plugins.AddFromType<MathPlugin>("Math");
 
             Kernel kernel = builder.Build();
 
             // Step 4: Math word problem
             string prompt = "I had 124 apples.  I ate 15 of them.  Then I multiplied the amount of apples I had left by 3.  Finally, I divided all my apples equally among myself and 3 friends.  How many apples did each person get?  Do all math using my tools.  Show your work step by step.";
 
-            // Step 5: Enable Auto-Invocation of the tools
+            // Step 5: Enable Auto-Invocation of the tools. Without this, the
+            // model would know the Math plugin exists but wouldn't have
+            // permission to call it - it would just try (and fail) to guess
+            // the arithmetic itself.
             var executionSettings = new GeminiPromptExecutionSettings
             {
                 ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions

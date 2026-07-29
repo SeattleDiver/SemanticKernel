@@ -1,4 +1,9 @@
-﻿using Microsoft.SemanticKernel;
+﻿// TechSupportAgent
+// ---------------------------------------------------------------------------
+// A domain-isolated specialist: it clones the base kernel (empty plugin
+// collection) and registers only its own ResetPassword tool, so it has no
+// way to reach BillingAgent's tools even under an adversarial prompt.
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Google;
 using System.ComponentModel;
 

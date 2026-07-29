@@ -1,4 +1,10 @@
-﻿using Microsoft.Extensions.AI;
+﻿// HybridRetriever
+// ---------------------------------------------------------------------------
+// Runs two independent searches over the same in-memory database and merges
+// the results: cosine similarity over embedding vectors (catches semantic
+// matches like "battery" -> "power source") and a plain substring match over
+// the raw text (catches exact terms embeddings can miss, like part numbers).
+using Microsoft.Extensions.AI;
 using System;
 using System.Collections.Generic;
 using System.Text;

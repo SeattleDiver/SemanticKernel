@@ -1,4 +1,11 @@
-﻿using Microsoft.SemanticKernel;
+﻿// Day 1: The Conversationalist
+// ---------------------------------------------------------------------------
+// The first project in the series - a continuous, terminal-based chatbot.
+// Demonstrates the core Semantic Kernel building blocks every later episode
+// builds on: Kernel.CreateBuilder(), a chat completion connector,
+// IChatCompletionService, and a ChatHistory object that gives the model
+// memory of the conversation across turns.
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace Conversationalist
@@ -7,7 +14,8 @@ namespace Conversationalist
     {
         static async Task Main(string[] args)
         {
-            // Step 1: Setup a kernel builder
+            // Step 1: Setup a kernel builder - the factory used to configure
+            // and construct the Kernel (the app's central AI service registry)
             var builder = Kernel.CreateBuilder();
 
             // Step 2: Add a chat completion service to the builder
@@ -27,6 +35,9 @@ namespace Conversationalist
             var chatHistory = new ChatHistory("You are a helpful, friendly, and concise AI Assistant.");
             Console.WriteLine("Chatbot initialized.  Type 'exit' to quit");
 
+            // Step 6: The conversation loop - reads a line from the console,
+            // hands it to the model along with the running history, prints
+            // the reply, and repeats until the user types "exit"
             while(true)
             {
                 Console.Write("\nUser: ");
@@ -50,6 +61,9 @@ namespace Conversationalist
 
                 Console.WriteLine($"AI response: {response.Content}");
 
+                // This step is not optional: if the assistant's reply is never
+                // added back to the history, the model has no memory of its
+                // own previous answers and the conversation loses context.
                 if (response.Content != null)
                 {
                     chatHistory.AddAssistantMessage(response.Content);

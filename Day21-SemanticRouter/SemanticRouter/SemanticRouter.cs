@@ -1,4 +1,11 @@
-﻿using Microsoft.SemanticKernel.ChatCompletion;
+﻿// SemanticRouter
+// ---------------------------------------------------------------------------
+// The "switchboard": classifies a user's intent (TECH/BILLING/GENERAL) into
+// strict JSON via ResponseMimeType, so the caller can deserialize the
+// decision instead of pattern-matching free text. The prompt asks for
+// "reasoning" before "intent" deliberately - forcing a chain-of-thought
+// explanation first measurably improves classification accuracy.
+using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;
 using System.Text.Json;
 

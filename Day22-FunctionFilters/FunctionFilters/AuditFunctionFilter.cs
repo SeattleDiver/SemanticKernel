@@ -1,4 +1,10 @@
-﻿using Microsoft.SemanticKernel;
+﻿// AuditFunctionFilter
+// ---------------------------------------------------------------------------
+// Wraps every plugin invocation with timing and audit logging. The `next`
+// delegate is the actual C# method call - this filter could also cancel it
+// (by not calling next() and setting context.Result manually) to enforce a
+// security policy before a tool ever runs.
+using Microsoft.SemanticKernel;
 using System.Diagnostics;
 
 namespace FunctionFilters

@@ -1,4 +1,8 @@
-﻿using Microsoft.SemanticKernel;
+﻿// PromptLoggingFilter
+// ---------------------------------------------------------------------------
+// A cross-cutting observability filter, entirely provider-agnostic: it runs
+// around every prompt render regardless of which connector is registered.
+using Microsoft.SemanticKernel;
 
 namespace FunctionFilters
 {

@@ -1,4 +1,11 @@
-﻿using System;
+﻿// Day 10: The Code Generator
+// ---------------------------------------------------------------------------
+// A persona-driven "developer agent" that generates and iteratively refines
+// C# code across a multi-turn conversation. Low Temperature/TopP suppress
+// creative variance in the generated code, and the conversation history lets
+// the agent "remember" and revise its own earlier output on request. This
+// episode's output becomes the code the Critic (Day 11) reviews.
+using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;

@@ -1,4 +1,10 @@
-﻿using System.Net.Http;
+﻿// RetryHandler
+// ---------------------------------------------------------------------------
+// A plain DelegatingHandler that retries transient HTTP failures (500/503/
+// 429) with exponential backoff before giving up. This is entirely
+// provider-agnostic - it just wraps whatever HttpClient the connector uses,
+// so it works unchanged no matter which LLM provider is registered.
+using System.Net.Http;
 using System.Threading;
 
 public class RetryHandler : DelegatingHandler

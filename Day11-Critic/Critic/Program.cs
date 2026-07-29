@@ -1,4 +1,11 @@
-﻿using System;
+﻿// Day 11: The Critic
+// ---------------------------------------------------------------------------
+// A rubric-based code reviewer. Rather than forcing real structured JSON
+// output (that comes later, in Days 19/21), this episode gets a structured-
+// looking result purely through prompt instructions - asking the model to
+// follow a fixed SCORE/PROS/CONS/FIX text format. The sample method under
+// review has a deliberate bug (unchecked division) for the critic to catch.
+using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Google;

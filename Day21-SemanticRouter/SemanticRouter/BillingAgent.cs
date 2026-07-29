@@ -1,4 +1,9 @@
-﻿using Microsoft.SemanticKernel;
+﻿// BillingAgent
+// ---------------------------------------------------------------------------
+// The billing counterpart to TechSupportAgent: its own cloned, isolated
+// kernel with only the GetBalance tool registered - it physically cannot
+// reset a password, no matter how it's asked.
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Google;
 using System.ComponentModel;
 

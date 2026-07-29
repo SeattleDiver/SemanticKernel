@@ -1,4 +1,9 @@
-﻿using Microsoft.SemanticKernel;
+﻿// SecureDatabasePlugin
+// ---------------------------------------------------------------------------
+// A plain, single-purpose plugin with zero logging/timing code - all of that
+// cross-cutting concern lives in the filters instead, keeping this class
+// focused only on its actual job.
+using Microsoft.SemanticKernel;
 using System.ComponentModel;
 
 namespace FunctionFilters

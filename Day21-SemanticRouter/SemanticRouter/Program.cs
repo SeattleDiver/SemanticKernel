@@ -1,4 +1,12 @@
-﻿using Microsoft.SemanticKernel;
+﻿// Day 21: Semantic Routing
+// ---------------------------------------------------------------------------
+// A high-speed "Router" (SemanticRouter.cs) classifies user intent up front
+// via structured JSON, then dispatches to an isolated specialist agent
+// (TechSupportAgent.cs / BillingAgent.cs) built with Kernel.Clone() so each
+// specialist only has access to its own tools. This scales better than one
+// agent holding every tool - fewer options per call, less "tool
+// hallucination", and hard tool isolation between domains.
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace SemanticRouter
@@ -12,7 +20,6 @@ namespace SemanticRouter
             string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
                 ?? throw new Exception("GEMINI_API_KEY is missing");
 
-            //builder.AddGoogleAIGeminiChatCompletion("gemini-3.1-pro-preview", apiKey);
             builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
             Kernel baseKernel = builder.Build();
 

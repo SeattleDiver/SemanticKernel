@@ -1,11 +1,18 @@
-﻿using System;
+﻿// Day 13: Prompt Logic Plugins
+// ---------------------------------------------------------------------------
+// Shows how to keep looping/conditional logic OUT of the prompt template
+// string by delegating it to plugin function calls instead
+// ({{UserHelperPlugin.GetPurchaseList $user}} etc.). This keeps the template
+// itself simple (just variable substitution) while the actual "if" and
+// "loop" logic lives in ordinary, testable C# methods.
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using Microsoft.SemanticKernel;
 
-namespace BuiltInAgent
+namespace PromptLogicPlugins
 {
     public record Product(string Name, double Price);
     public record UserProfile(string Name, string Tier, List<Product> RecentPurchases);

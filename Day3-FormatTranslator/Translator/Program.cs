@@ -1,8 +1,14 @@
-﻿using System;
+﻿// Day 3: The Format Translator
+// ---------------------------------------------------------------------------
+// A "Transformation Agent" whose only job is turning messy natural language
+// into strict, machine-readable JSON. Demonstrates aggressive negative
+// prompting (telling the model what NOT to do) plus GeminiPromptExecutionSettings
+// (Temperature/TopP) to suppress the model's "creativity" so it behaves like
+// a deterministic parser instead of a conversational partner.
+using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Google;
-using OpenAI.Chat;
 
 namespace FormatTranslator
 {

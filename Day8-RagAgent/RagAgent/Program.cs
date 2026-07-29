@@ -1,12 +1,21 @@
-﻿using Microsoft.Extensions.AI;
+﻿// Day 8: Basic RAG Agent
+// ---------------------------------------------------------------------------
+// A naive Retrieval-Augmented Generation pipeline built from first principles
+// (no vector database): embed a small knowledge base, embed the user's
+// question, rank documents by hand-rolled cosine similarity, and stuff the
+// single best match into a grounded prompt. Seeing this done manually here
+// makes it clear what a real vector store automates in later episodes.
+using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 
-namespace BasicRagAgent
+namespace RagAgent
 {
+    // A single knowledge-base entry: the original text plus its embedding
+    // vector, so similarity can be computed without re-embedding on every query.
     public class KnowledgeDocument
     {
         public string Text { get; set; }
-        public ReadOnlyMemory<float> Vector { get; set; }   
+        public ReadOnlyMemory<float> Vector { get; set; }
     }
 
     class Program
@@ -61,7 +70,7 @@ namespace BasicRagAgent
                 .OrderByDescending(doc => CalculateCosineSimilarity(doc.Vector.Span, questionVector.Span))
                 .FirstOrDefault();
 
-            Console.WriteLine("$[RAG RETRIEVAL] Found relevant document: {bestMatch?.Text}");
+            Console.WriteLine($"[RAG RETRIEVAL] Found relevant document: {bestMatch?.Text}");
 
             // Step 8: Build the RAG prompt
             string promptTemplate = @"
@@ -95,6 +104,10 @@ USER QUESTION:
             Console.WriteLine("---------------------------");
         }
 
+        // Measures how "similar" two embedding vectors are (1.0 = identical
+        // direction/meaning, 0.0 = unrelated). This is the core math behind
+        // semantic search: documents whose vectors point in a similar
+        // direction to the question's vector are considered relevant.
         static float CalculateCosineSimilarity(ReadOnlySpan<float> vectorA, ReadOnlySpan<float> vectorB)
         {
             float dotProduct = 0, normA = 0, normB = 0;

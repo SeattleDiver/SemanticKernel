@@ -1,4 +1,10 @@
-﻿using Microsoft.SemanticKernel;
+﻿// RagAgent
+// ---------------------------------------------------------------------------
+// Takes whatever HybridRetriever finds and turns it into a grounded answer:
+// low temperature plus an explicit "say 'Data not found'" instruction keep
+// the model from making things up when the retrieved context doesn't
+// actually contain the answer.
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Google;
 
 
@@ -33,7 +39,7 @@ namespace AdvancedRAG
                 CONTEXT:
                 - {combinedContext}
 
-                QUESTION: {question} {combinedContext}
+                QUESTION: {question}
                 ";
 
             // 3. Execute with low temperature for factual grounding

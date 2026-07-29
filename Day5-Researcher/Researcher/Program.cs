@@ -1,4 +1,13 @@
-﻿using Microsoft.SemanticKernel;
+﻿// Day 5: The Researcher
+// ---------------------------------------------------------------------------
+// Answers a question that requires real-time knowledge the model can't have
+// from training data alone. Rather than a Semantic Kernel plugin, this uses
+// Gemini's own built-in Google Search grounding tool, wired in via the raw
+// ExtensionData escape hatch on GeminiPromptExecutionSettings. This is a
+// Gemini-specific capability - it has no equivalent on other providers, and
+// it works differently from SK's normal plugin/tool-calling model (see the
+// CRITICAL note below about why ToolCallBehavior must stay untouched here).
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Google;
 
 namespace Day5Researcher

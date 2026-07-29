@@ -1,4 +1,10 @@
-﻿using System;
+﻿// Day 9: The Interviewer
+// ---------------------------------------------------------------------------
+// A persona-constrained, multi-turn "mock interviewer" agent. Demonstrates
+// shaping model behavior entirely through the system prompt - explicit rules
+// (ask one question at a time, probe vague answers, escalate difficulty) -
+// layered on top of the same ChatHistory loop introduced in Day 1.
+using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -16,13 +22,9 @@ namespace Interviewer
             string apikey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ??
                 throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
 
-            var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("x-goog-api-key", apikey);
-
             builder.AddGoogleAIGeminiChatCompletion(
-                apiKey: apikey, 
-                modelId: "gemini-2.5-flash",
-                httpClient: httpClient);
+                apiKey: apikey,
+                modelId: "gemini-2.5-flash");
 
             Kernel kernel = builder.Build();
 
@@ -44,8 +46,14 @@ namespace Interviewer
 
             Console.WriteLine("--- Interview Mode started ---");
 
+            // Consistent execution settings for every model call in this conversation
+            var executionSettings = new GeminiPromptExecutionSettings
+            {
+                Temperature = 0.7,
+            };
+
             // 4. Initial propt to trigger the first question
-            var response = await chatService.GetChatMessageContentAsync(chatHistory, kernel: kernel);
+            var response = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel: kernel);
             Console.WriteLine($"Interviewer: {response.Content}");
             chatHistory.AddAssistantMessage(response.Content);
 
@@ -62,10 +70,6 @@ namespace Interviewer
                 chatHistory.AddUserMessage(candidateAnswer);
 
                 // Get the next response based on the full history
-                var executionSettings = new GeminiPromptExecutionSettings
-                {
-                    Temperature = 0.7,
-                };
                 var nextQuestion = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel: kernel);
                 Console.WriteLine($"\nInterviewer: {nextQuestion.Content}");
 

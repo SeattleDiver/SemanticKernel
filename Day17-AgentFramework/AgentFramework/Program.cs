@@ -1,4 +1,11 @@
-﻿using Microsoft.SemanticKernel;
+﻿// Day 17: Agent Framework
+// ---------------------------------------------------------------------------
+// The first use of Microsoft.SemanticKernel.Agents' ChatCompletionAgent - a
+// higher-level abstraction over the raw IChatCompletionService + ChatHistory
+// pattern used in every earlier episode. Shows that everything done manually
+// so far (persona injection, history management) can be wrapped in a
+// purpose-built agent object.
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;

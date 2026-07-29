@@ -1,12 +1,19 @@
-﻿using Microsoft.SemanticKernel;
+﻿// Day 16: Manual ReAct Loop
+// ---------------------------------------------------------------------------
+// A hand-rolled ReAct (Thought -> Action -> Observation) loop. Instead of
+// letting Semantic Kernel auto-invoke tools, EnableKernelFunctions lets the
+// model REQUEST a tool call without executing it - the code below manually
+// inspects that request, runs the tool itself, and feeds the result back as
+// an "observation" for the next turn. Seeing this by hand demystifies what
+// auto-invocation (used everywhere else in the series) does under the hood.
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
 
-namespace Day16ManualReAct
+namespace ManualReActLoop
 {
     public class ResearchPlugin
     {

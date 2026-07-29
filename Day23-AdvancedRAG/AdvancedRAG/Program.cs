@@ -1,4 +1,12 @@
-﻿using Microsoft.Extensions.AI;
+﻿// Day 23: Advanced RAG (Hybrid Search)
+// ---------------------------------------------------------------------------
+// Upgrades the naive vector-only RAG from Day 8 to Hybrid Search
+// (HybridRetriever.cs): vector similarity for semantic meaning plus a
+// keyword pass for exact terms (part numbers, IDs) that embeddings alone
+// can miss. Uses Microsoft.Extensions.AI's standard IEmbeddingGenerator
+// interface rather than a proprietary SK type, so the embedding backend can
+// be swapped without touching HybridRetriever.cs or Document.cs at all.
+using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
 
 namespace AdvancedRAG

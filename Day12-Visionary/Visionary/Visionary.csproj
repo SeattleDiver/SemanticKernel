@@ -12,4 +12,10 @@
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.78.0-alpha" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Assets\sample-chart.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

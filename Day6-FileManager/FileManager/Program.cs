@@ -1,4 +1,11 @@
-﻿using System;
+﻿// Day 6: The File Manager
+// ---------------------------------------------------------------------------
+// Gives the agent "hands": a plugin that can list, read, and write files on
+// the local filesystem - the first episode with real side-effects instead of
+// just generated text. The AI is handed a vague, multi-step goal ("find the
+// log file, summarize the errors, write the summary") and has to chain
+// ListFiles -> ReadFile -> WriteFile on its own via auto tool-invocation.
+using System;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -16,7 +23,10 @@ namespace Day6FileManager
 
         public FileSystemPlugin()
         {
-            // Sandbox the AI to the application's current running directory for safety
+            // Sandbox the AI to the application's current running directory for safety.
+            // Side-effect-capable plugins must restrict what the model can touch -
+            // without this, a malicious prompt could read or delete files well
+            // outside what this demo intends to expose.
             _currentDirectory = Directory.GetCurrentDirectory();
         }
 
@@ -53,7 +63,7 @@ namespace Day6FileManager
             string path = Path.Combine(_currentDirectory, fileName);
             await File.WriteAllTextAsync(path, content);
 
-            return "Success: The file '{fileName}' was successfully created and written";
+            return $"Success: The file '{fileName}' was successfully created and written";
         }
     }
 
@@ -65,7 +75,8 @@ namespace Day6FileManager
             SetupDummyLogFile();
 
             // Step 3: Initialize the Kernel with our model
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? throw new Exception("GEMINI_API_KEY environment variable not set.");
             string model = "gemini-2.5-flash";
 
             var builder = Kernel.CreateBuilder();

@@ -1,4 +1,13 @@
-﻿using Microsoft.SemanticKernel;
+﻿// Day 19: The Coordinator (Pro)
+// ---------------------------------------------------------------------------
+// Progresses from the fixed turn-order of Day 18 to the Coordinator Pattern:
+// a meta-agent that reads conversation state and decides, on every
+// iteration, which specialist (Coder/Auditor) should speak next - forced to
+// respond with strict JSON via ResponseMimeType so routing decisions are
+// parsed programmatically instead of guessed from free text. Also pairs
+// with RetryHandler.cs, a provider-agnostic resilient HttpClient for
+// transient upstream errors.
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;
 using System.Text.Json;
@@ -6,7 +15,7 @@ using System.Text.Json.Serialization;
 
 namespace CoordinatorPro
 {
-    // 1. Define a structured output schema
+    // The strict JSON schema the Coordinator must respond with on every turn.
     public class RoutingDecision
     {
         [JsonPropertyName("reasoning")]
@@ -26,10 +35,11 @@ namespace CoordinatorPro
 
             var resilientHttpClient = new HttpClient(new RetryHandler(maxRetries: 5));
 
-            // Upgrade to Gemini 3.1 Pro for advanced reasoning tasks.  Also, we've included a resilient HTTP
-            // retry handler to deal with Google's occasional outages (503 Service Unavailable)
+            // This "meta-agent" episode benefits from a stronger model for its routing
+            // reasoning - swap in a Pro-tier Gemini model here if you want to demonstrate
+            // that. We've also included a resilient HTTP retry handler to deal with
+            // Google's occasional outages (503 Service Unavailable).
             builder.AddGoogleAIGeminiChatCompletion(
-                //modelId: "gemini-3.1-pro-preview", 
                 modelId: "gemini-2.5-flash",
                 apiKey: apiKey,
                 httpClient: resilientHttpClient);
