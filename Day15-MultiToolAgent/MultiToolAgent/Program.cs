@@ -2,7 +2,11 @@
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 
 namespace MultiToolAgent
 {
@@ -33,13 +37,26 @@ namespace MultiToolAgent
     {
         static async Task Main(string[] strings)
         {
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in MultiToolAgent.csproj) before building.");
+#else
             var builder = Kernel.CreateBuilder();
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
                 ?? throw new Exception("OPENAI_API_KEY was not found");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
             // 2. Setup OpenAI
             builder.AddOpenAIChatCompletion(modelId, apiKey);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? throw new Exception("GEMINI_API_KEY was not found");
+
+            // 2. Setup Gemini
+            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+#endif
 
             // 3. Register the plugins
             builder.Plugins.AddFromType<TimePlugin>("Time");
@@ -47,12 +64,19 @@ namespace MultiToolAgent
 
             Kernel kernel = builder.Build();
 
-            // 4. Set the FunctionChoiceBehavior to Auto
+            // 4. Set the tool-calling behavior to Auto
             // This is what makes it "Agentic" - the Kernel handles the tool-loop
+#if CHATGPT
             var settings = new OpenAIPromptExecutionSettings
             {
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
             };
+#elif GOOGLE
+            var settings = new GeminiPromptExecutionSettings
+            {
+                ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
+            };
+#endif
 
             string userRequest = "What time is it, and should I bring an umbrella in Salt Lake City today?";
             Console.WriteLine($"User Request: {userRequest}");
@@ -60,7 +84,7 @@ namespace MultiToolAgent
 
             var result = await kernel.InvokePromptAsync(userRequest, new KernelArguments(settings));
             Console.WriteLine($"\nFinal response: {result}");
-
+#endif
         }
     }
 }

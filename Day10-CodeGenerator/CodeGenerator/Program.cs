@@ -2,7 +2,11 @@
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 
 namespace CodeGenerator
 {
@@ -10,13 +14,26 @@ namespace CodeGenerator
     {
         static async Task Main(string[] args)
         {
-            // 1. Setup kernel with an OpenAI chat model
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in CodeGenerator.csproj) before building.");
+#else
+            // 1. Setup kernel with a chat model
             var builder = Kernel.CreateBuilder();
+#if CHATGPT
             var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
                 ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
             var modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
             builder.AddOpenAIChatCompletion(modelId, apiKey);
+#elif GOOGLE
+            var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
+            var modelId = "gemini-2.5-flash";
+
+            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
+#endif
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -46,11 +63,19 @@ namespace CodeGenerator
                 chatHistory.AddUserMessage($"Write a c# implemenation for: {userRequest}");
                 Console.WriteLine("\n --- Generating code ---\n");
 
+#if CHATGPT
                 var settings = new OpenAIPromptExecutionSettings
                 {
                     Temperature = 0.2,
                     TopP = 0.1
                 };
+#elif GOOGLE
+                var settings = new GeminiPromptExecutionSettings
+                {
+                    Temperature = 0.2,
+                    TopP = 0.1
+                };
+#endif
 
                 var response = await chatService.GetChatMessageContentAsync(chatHistory, settings, kernel);
                 if (response.Content != null)
@@ -61,6 +86,7 @@ namespace CodeGenerator
                     chatHistory.AddAssistantMessage(response.Content);
                 }
             }
+#endif
         }
     }
 }

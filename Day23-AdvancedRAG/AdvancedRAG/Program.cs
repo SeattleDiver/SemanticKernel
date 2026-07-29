@@ -10,7 +10,13 @@ namespace AdvancedRAG
     {
         static async Task Main(string[] args)
         {
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in AdvancedRAG.csproj) before building.");
+#else
             IKernelBuilder builder = Kernel.CreateBuilder();
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
                 ?? throw new Exception("OPENAI_API_KEY is missing");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
@@ -19,6 +25,14 @@ namespace AdvancedRAG
             // Chat model for reeasoning, Embedding model for vectorization
             builder.AddOpenAIChatCompletion(modelId, apiKey);
             builder.AddOpenAIEmbeddingGenerator(embeddingModelId, apiKey);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? throw new Exception("GEMINI_API_KEY is missing");
+
+            // Chat model for reeasoning, Embedding model for vectorization
+            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddGoogleAIEmbeddingGenerator("gemini-embedding-001", apiKey);
+#endif
 
             Kernel kernel = builder.Build();
 
@@ -56,6 +70,7 @@ namespace AdvancedRAG
 
             string response = await ragAgent.AnswerAsync(query);
             Console.WriteLine($"\nAI Answer: {response}");
+#endif
         }
     }
 }

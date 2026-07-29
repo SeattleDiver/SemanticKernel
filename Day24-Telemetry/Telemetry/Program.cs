@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 
@@ -11,6 +15,11 @@ namespace Telemetry
     {
         static async Task Main(string[] args)
         {
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in Telemetry.csproj) before building.");
+#else
             // 1. Configure OpenTelemetry Tracing
             // We use explicit lines rather than fluent chaining for clarity.
             TracerProviderBuilder traceBuilder = Sdk.CreateTracerProviderBuilder();
@@ -27,11 +36,18 @@ namespace Telemetry
             // 2. Initialize the Kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
 
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
                 ?? throw new Exception("OPENAI_API_KEY is missing");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
             builder.AddOpenAIChatCompletion(modelId, apiKey);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? throw new Exception("GEMINI_API_KEY is missing");
+
+            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+#endif
 
             // Register our mock plugin
             builder.Plugins.AddFromType<SlowWeatherPlugin>();
@@ -44,8 +60,13 @@ namespace Telemetry
             // Be enabling AutoInvoke, Semantic Kernel will automatically handle the tool loop.
             // This generates multiple telemetry spans: one for the initial LLM call,
             // one for the plugin execution, and one for the final LLM summary.
+#if CHATGPT
             OpenAIPromptExecutionSettings settings = new OpenAIPromptExecutionSettings();
             settings.FunctionChoiceBehavior = FunctionChoiceBehavior.Auto();
+#elif GOOGLE
+            GeminiPromptExecutionSettings settings = new GeminiPromptExecutionSettings();
+            settings.ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions;
+#endif
 
             KernelArguments arguments = new KernelArguments(settings);
             string prompt = "What is the weather like in Seattle right now?";
@@ -60,8 +81,8 @@ namespace Telemetry
 
             // Ensure all traces are flushed to the console before the program exits.
             tracerProvider.ForceFlush();
-            Console.WriteLine("\nSession complete.  Review Open Telemetry traces above."); 
-
+            Console.WriteLine("\nSession complete.  Review Open Telemetry traces above.");
+#endif
         }
     }
 }

@@ -37,11 +37,22 @@ namespace PromptLogicPlugins
     {
         static async Task Main(string[] args)
         {
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in PromptLogicPlugins.csproj) before building.");
+#else
             var builder = Kernel.CreateBuilder();
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new Exception("Missing Key");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
             builder.AddOpenAIChatCompletion(modelId, apiKey);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new Exception("Missing Key");
+
+            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+#endif
 
             // Register the plugin that handles our logic/looping
             builder.Plugins.AddFromType<UserHelperPlugin>();
@@ -86,6 +97,7 @@ namespace PromptLogicPlugins
 
             Console.WriteLine("\nAI Response:");
             Console.WriteLine(result.ToString());
+#endif
         }
     }
 }

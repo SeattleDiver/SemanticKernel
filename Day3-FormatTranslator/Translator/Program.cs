@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 
 namespace FormatTranslator
 {
@@ -9,12 +13,24 @@ namespace FormatTranslator
     {
         static async Task Main(string[] args)
         {
-            // Step 1. Init the kernel with an OpenAI chat model
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in Translator.csproj) before building.");
+#else
+            // Step 1. Init the kernel with a chat model
             var builder = Kernel.CreateBuilder();
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
             builder.AddOpenAIChatCompletion(modelId, apiKey);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
+            string modelId = "gemini-2.5-flash";
+
+            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
+#endif
             Kernel kernel = builder.Build();
 
             // Step 2. Defind the unstrucured input and the prompt template
@@ -37,11 +53,19 @@ User: Translate this text into JSON:
 {{$input}}
 ";
             // Step 4. Configure Execution Settings to eliminate creativity
+#if CHATGPT
             var executionSettings = new OpenAIPromptExecutionSettings()
             {
                 Temperature = 0.0, // Eliminate randomness
                 TopP = 0.1
             };
+#elif GOOGLE
+            var executionSettings = new GeminiPromptExecutionSettings()
+            {
+                Temperature = 0.0, // Eliminate randomness
+                TopP = 0.1
+            };
+#endif
 
             // Step 5. Execute the prompt with the unstructured input
             var arguments = new KernelArguments(executionSettings)
@@ -60,6 +84,7 @@ User: Translate this text into JSON:
             Console.WriteLine("--- STRING JSON OUTPUT ---");
             Console.WriteLine(result.ToString());
             Console.WriteLine("--------------------------");
+#endif
         }
     }
 }

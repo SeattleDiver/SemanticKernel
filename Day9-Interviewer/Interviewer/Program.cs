@@ -2,7 +2,11 @@
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 
 namespace Interviewer
 {
@@ -10,9 +14,15 @@ namespace Interviewer
     {
         static async Task Main(string[] args)
         {
-            // 1. Initialize the Kernel with an OpenAI chat model
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in Interviewer.csproj) before building.");
+#else
+            // 1. Initialize the Kernel with a chat model
             var builder = Kernel.CreateBuilder();
 
+#if CHATGPT
             string apikey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ??
                 throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
@@ -20,6 +30,15 @@ namespace Interviewer
             builder.AddOpenAIChatCompletion(
                 apiKey: apikey,
                 modelId: modelId);
+#elif GOOGLE
+            string apikey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ??
+                throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+            string modelId = "gemini-2.5-flash";
+
+            builder.AddGoogleAIGeminiChatCompletion(
+                apiKey: apikey,
+                modelId: modelId);
+#endif
 
             Kernel kernel = builder.Build();
 
@@ -42,10 +61,17 @@ namespace Interviewer
             Console.WriteLine("--- Interview Mode started ---");
 
             // Consistent execution settings for every model call in this conversation
+#if CHATGPT
             var executionSettings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.7,
             };
+#elif GOOGLE
+            var executionSettings = new GeminiPromptExecutionSettings
+            {
+                Temperature = 0.7,
+            };
+#endif
 
             // 4. Initial propt to trigger the first question
             var response = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel: kernel);
@@ -74,6 +100,7 @@ namespace Interviewer
                     chatHistory.AddAssistantMessage(nextQuestion.Content);
                 }
             }
+#endif
         }
     }
 }

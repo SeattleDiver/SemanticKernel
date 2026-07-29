@@ -1,5 +1,9 @@
 ﻿using Microsoft.SemanticKernel;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 using System.ComponentModel;
 
 namespace SemanticRouter
@@ -28,10 +32,17 @@ namespace SemanticRouter
         
         public async Task<string> HandleAsync(string input)
         {
+#if CHATGPT
             var settings = new OpenAIPromptExecutionSettings
             {
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
             };
+#elif GOOGLE
+            var settings = new GeminiPromptExecutionSettings
+            {
+                ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
+            };
+#endif
             string prompt = $"You are a Tech Support agent.  Solve the user's problem using your tools.  User: {input}";
 
             var result = await _isolatedKernel.InvokePromptAsync(prompt, new KernelArguments(settings));

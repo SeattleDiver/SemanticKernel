@@ -1,6 +1,10 @@
 ﻿using Microsoft.SemanticKernel.ChatCompletion;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using ChatResponseFormat = OpenAI.Chat.ChatResponseFormat;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 using System.Text.Json;
 
 namespace SemanticRouter
@@ -36,11 +40,19 @@ namespace SemanticRouter
             history.AddUserMessage(userInput);
 
             // Force structured JSON output deterministically
+#if CHATGPT
             var settings = new OpenAIPromptExecutionSettings
             {
                 ResponseFormat = ChatResponseFormat.CreateJsonObjectFormat(),
                 Temperature = 0.0
             };
+#elif GOOGLE
+            var settings = new GeminiPromptExecutionSettings
+            {
+                ResponseMimeType = "application/json",
+                Temperature = 0.0
+            };
+#endif
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
             return JsonSerializer.Deserialize<RouteDecision>(response.Content ?? "{}")

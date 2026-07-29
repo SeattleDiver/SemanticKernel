@@ -1,7 +1,11 @@
 ﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using ChatResponseFormat = OpenAI.Chat.ChatResponseFormat;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -21,12 +25,18 @@ namespace CoordinatorPro
     {
         static async Task Main(string[] args)
         {
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in CoordinatorPro.csproj) before building.");
+#else
             IKernelBuilder builder = Kernel.CreateBuilder();
+            var resilientHttpClient = new HttpClient(new RetryHandler(maxRetries: 5));
+
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
                 ?? throw new Exception("OPENAI_API_KEY is missing");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
-
-            var resilientHttpClient = new HttpClient(new RetryHandler(maxRetries: 5));
 
             // This "meta-agent" episode benefits from a stronger model for its routing
             // reasoning - point OPENAI_CHAT_MODEL at a higher-tier deployment (e.g. gpt-4o)
@@ -36,6 +46,18 @@ namespace CoordinatorPro
                 modelId: modelId,
                 apiKey: apiKey,
                 httpClient: resilientHttpClient);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? throw new Exception("GEMINI_API_KEY is missing");
+
+            // Upgrade to Gemini 3.1 Pro for advanced reasoning tasks.  Also, we've included a resilient HTTP
+            // retry handler to deal with Google's occasional outages (503 Service Unavailable)
+            builder.AddGoogleAIGeminiChatCompletion(
+                //modelId: "gemini-3.1-pro-preview",
+                modelId: "gemini-2.5-flash",
+                apiKey: apiKey,
+                httpClient: resilientHttpClient);
+#endif
 
             Kernel kernel = builder.Build();
 
@@ -69,11 +91,19 @@ namespace CoordinatorPro
             int iteration = 0;
             int maxIterations = 8;
 
+#if CHATGPT
             var coordSettings = new OpenAIPromptExecutionSettings()
             {
                 ResponseFormat = ChatResponseFormat.CreateJsonObjectFormat(),
                 Temperature = 0.0
             };
+#elif GOOGLE
+            var coordSettings = new GeminiPromptExecutionSettings()
+            {
+                ResponseMimeType = "application/json",
+                Temperature = 0.0
+            };
+#endif
 
             while (!isFinished && iteration < maxIterations)
             {
@@ -125,6 +155,7 @@ namespace CoordinatorPro
             }
 
             Console.WriteLine(isFinished ? "\nProject lifecycle finished." : "\n Max iterations reached.");
+#endif
         }
 
         static async Task CallAgent(string name, string persona, ChatHistory history, IChatCompletionService service)

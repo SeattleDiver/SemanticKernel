@@ -7,13 +7,25 @@ namespace HumanInTheLoop
     {
         static async Task Main(string[] args)
         {
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in HumanInTheLoop.csproj) before building.");
+#else
             // 1. Init the kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
                 ?? throw new Exception("OPENAI_API_KEY is missing");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
             builder.AddOpenAIChatCompletion(modelId, apiKey);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? throw new Exception("GEMINI_API_KEY is missing");
+
+            builder.AddGoogleAIGeminiChatCompletion("gemini-3.1-pro-preview", apiKey);
+#endif
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -65,7 +77,7 @@ namespace HumanInTheLoop
             {
                 Console.WriteLine("\n Maximum revisions reached.  Workflow stopped.");
             }
-
+#endif
         }
     }
 }

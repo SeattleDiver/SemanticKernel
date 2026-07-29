@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 
 namespace critic
 {
@@ -9,13 +13,26 @@ namespace critic
     {
         static async Task Main(string[] args)
         {
-            // 1. Setup kernel with an OpenAI chat model
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in Critic.csproj) before building.");
+#else
+            // 1. Setup kernel with a chat model
             var builder = Kernel.CreateBuilder();
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
                 ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
             builder.AddOpenAIChatCompletion(modelId, apiKey);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
+            string modelId = "gemini-2.5-flash";
+
+            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
+#endif
             Kernel kernel = builder.Build();
 
             // 2. The code to be critiqued (output from day 10)
@@ -46,11 +63,19 @@ User: Review this c# code: {{$input}}";
 
             // 4. Execute the Critique
             // We use the temperature 0.0 because a critic should be objective and consistent.
+#if CHATGPT
             var executionSettings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.0,
                 TopP = 0.1
             };
+#elif GOOGLE
+            var executionSettings = new GeminiPromptExecutionSettings
+            {
+                Temperature = 0.0,
+                TopP = 0.1
+            };
+#endif
 
             var arguments = new KernelArguments(executionSettings)
             {
@@ -62,6 +87,7 @@ User: Review this c# code: {{$input}}";
 
             Console.WriteLine("--- Critique Result ---");
             Console.WriteLine(result.ToString().Trim());
+#endif
         }
     }
 }

@@ -5,7 +5,11 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 
 namespace Day6FileManager
 {
@@ -61,16 +65,29 @@ namespace Day6FileManager
     {
         static async Task Main(string[] args)
         {
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in FileManager.csproj) before building.");
+#else
             // Step 2: Setup the Dummy Log File for the AI to find
             SetupDummyLogFile();
 
             // Step 3: Initialize the Kernel with our model
+            var builder = Kernel.CreateBuilder();
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
                 ?? throw new Exception("OPENAI_API_KEY environment variable not set.");
             string model = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
-            var builder = Kernel.CreateBuilder();
             builder.AddOpenAIChatCompletion(model, apiKey);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? throw new Exception("GEMINI_API_KEY environment variable not set.");
+            string model = "gemini-2.5-flash";
+
+            builder.AddGoogleAIGeminiChatCompletion(model, apiKey);
+#endif
 
             // Step 4: Add our file system plugin
             builder.Plugins.AddFromObject(new FileSystemPlugin(), "FileSystem");
@@ -81,11 +98,19 @@ namespace Day6FileManager
             string prompt = "Look in the current directory for a server log file.  Read its contents, figure out what errors occurred, and write a summary of those errors into a new file called 'error_summary.txt'.";
 
             // Step 6: Enable Auto-Invocation so the AI can chain the tools
+#if CHATGPT
             var executionSettings = new OpenAIPromptExecutionSettings
             {
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
                 Temperature = 0.0
             };
+#elif GOOGLE
+            var executionSettings = new GeminiPromptExecutionSettings
+            {
+                ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions,
+                Temperature = 0.0
+            };
+#endif
 
             var arguments = new KernelArguments(executionSettings);
 
@@ -107,7 +132,7 @@ namespace Day6FileManager
                 Console.WriteLine("[VERIFICATION] Reading 'error_summary.txt' directly from the local filesystem");
                 Console.WriteLine(await File.ReadAllTextAsync(summaryPath));
             }
-
+#endif
         }
 
         // Helper method to generate a log file for our demonstration

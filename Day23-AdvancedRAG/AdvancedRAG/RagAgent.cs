@@ -1,5 +1,9 @@
 ﻿using Microsoft.SemanticKernel;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 
 
 namespace AdvancedRAG
@@ -37,10 +41,17 @@ namespace AdvancedRAG
                 ";
 
             // 3. Execute with low temperature for factual grounding
+#if CHATGPT
             var executionSettings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.0
             };
+#elif GOOGLE
+            var executionSettings = new GeminiPromptExecutionSettings
+            {
+                Temperature = 0.0
+            };
+#endif
 
             var result = await _kernel.InvokePromptAsync(prompt, new KernelArguments(executionSettings));
 

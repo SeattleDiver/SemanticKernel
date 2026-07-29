@@ -16,8 +16,14 @@ namespace RagAgent
     {
         static async Task Main(string[] args)
         {
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in RagAgent.csproj) before building.");
+#else
             // Step 2: Initialize the Kernel with Both Chat and Embedding models
             var builder = Kernel.CreateBuilder();
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
                 ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
@@ -26,6 +32,15 @@ namespace RagAgent
             // Add the chat model and embedding model to the kernel
             builder.AddOpenAIChatCompletion(modelId, apiKey);
             builder.AddOpenAIEmbeddingGenerator(embeddingModelId, apiKey);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
+            string modelId = "gemini-2.5-flash";
+
+            // Add the chat model and embedding model to the kernel
+            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
+            builder.AddGoogleAIEmbeddingGenerator("gemini-embedding-001", apiKey);
+#endif
 
             Kernel kernel = builder.Build();
 
@@ -97,6 +112,7 @@ USER QUESTION:
             Console.WriteLine("--- AI LIBRARIAN ANSWER ---");
             Console.WriteLine(result.ToString().Trim());
             Console.WriteLine("---------------------------");
+#endif
         }
 
         static float CalculateCosineSimilarity(ReadOnlySpan<float> vectorA, ReadOnlySpan<float> vectorB)

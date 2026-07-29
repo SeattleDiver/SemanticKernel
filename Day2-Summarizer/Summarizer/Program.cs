@@ -6,12 +6,24 @@ namespace Summarizer
     {
         static async Task Main(string[] args)
         {
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in Summarizer.csproj) before building.");
+#else
             // Step1: Initialize the Kernel
             var builder = Kernel.CreateBuilder();
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new Exception("OPENAI_API_KEY environment variable not set.");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
 
             builder.AddOpenAIChatCompletion(modelId, apiKey);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new Exception("GEMINI_API_KEY environment variable not set.");
+            string modelId = "gemini-2.5-flash";
+
+            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
+#endif
             Kernel kernel = builder.Build();
 
             // Step 2. Create text file for demonstration
@@ -48,7 +60,7 @@ namespace Summarizer
             Console.WriteLine("--- AI Summary ---");
             Console.WriteLine(result.ToString());
             Console.WriteLine("------------------");
-
+#endif
         }
 
         // Helper method to generate a long text file for our demo

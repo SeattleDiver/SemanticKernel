@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 
 namespace Visionary
 {
@@ -11,13 +15,25 @@ namespace Visionary
     {
         static async Task Main(string[] args)
         {
-            // 1. Initialize the Kernel with a vision-capable OpenAI chat model
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in Visionary.csproj) before building.");
+#else
+            // 1. Initialize the Kernel with a vision-capable chat model
             var builder = Kernel.CreateBuilder();
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
                 ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o";
 
             builder.AddOpenAIChatCompletion(modelId, apiKey);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
+
+            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+#endif
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -45,13 +61,18 @@ namespace Visionary
 
             // 4. Invoke the model
             // Multimodal tasks often benefit from a slightly higher temperature to encourage creative descriptions
+#if CHATGPT
             var settings = new OpenAIPromptExecutionSettings { Temperature = 0.4 };
+#elif GOOGLE
+            var settings = new GeminiPromptExecutionSettings { Temperature = 0.4 };
+#endif
 
             var response = await chatService.GetChatMessageContentAsync(chatHistory, settings, kernel);
 
             // 5. Output the visual analysis
             Console.WriteLine("\n--- VISIONARY ANALYSIS ---");
-            Console.WriteLine(response.Content); 
+            Console.WriteLine(response.Content);
+#endif
         }
     }
 }

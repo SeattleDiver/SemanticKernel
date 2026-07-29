@@ -1,6 +1,10 @@
 ﻿using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+#if CHATGPT
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+#elif GOOGLE
+using Microsoft.SemanticKernel.Connectors.Google;
+#endif
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
@@ -28,10 +32,20 @@ namespace ManualReActLoop
     {
         static async Task Main(string[] args)
         {
+#if !CHATGPT && !GOOGLE
+            throw new InvalidOperationException(
+                "No LLM provider selected. Define either CHATGPT or GOOGLE " +
+                "(see <DefineConstants> in ManualReActLoop.csproj) before building.");
+#else
             var builder = Kernel.CreateBuilder();
+#if CHATGPT
             string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new Exception("Missing key");
             string modelId = Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini";
             builder.AddOpenAIChatCompletion(modelId, apiKey);
+#elif GOOGLE
+            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new Exception("Missing key");
+            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+#endif
 
             // 1. Add stateful object
             var myResearchTool = new ResearchPlugin();
@@ -55,7 +69,11 @@ namespace ManualReActLoop
             for (int i = 0; i < 5; i++)
             {
                 // Request next step from AI (Enable Call but DON'T Auto-Invoke)
+#if CHATGPT
                 var settings = new OpenAIPromptExecutionSettings { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(autoInvoke: false) };
+#elif GOOGLE
+                var settings = new GeminiPromptExecutionSettings { ToolCallBehavior = GeminiToolCallBehavior.EnableKernelFunctions };
+#endif
                 var result = await chatService.GetChatMessageContentAsync(history, settings, kernel);
 
                 if (string.IsNullOrEmpty(result.Content)) continue;
@@ -80,6 +98,7 @@ namespace ManualReActLoop
                     history.Add(new ChatMessageContent(AuthorRole.Tool, observation) { Items = { new FunctionResultContent(call, toolResult) } });
                 }
             }
+#endif
         }
     }
 }
