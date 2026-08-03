@@ -1,0 +1,6 @@
+@UniversalProjectManager.Api_HostAddress = http://localhost:5193
+
+GET {{UniversalProjectManager.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

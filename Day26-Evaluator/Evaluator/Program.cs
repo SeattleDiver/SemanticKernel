@@ -27,7 +27,7 @@ namespace Evaluator
             var tests = new[]
             {
                 new TestCase(Question: "What is the captial of France?",
-                            GroundTruth: "The captical of France is Paris"),
+                            GroundTruth: "The capital of France is Paris"),
 
                 new TestCase(Question: "How long is the return window for a Premium laptop?",
                             GroundTruth: "Premium laptops have a strict 14-day return window.")
@@ -38,7 +38,7 @@ namespace Evaluator
             // Run the Suite
             for (int i = 0; i < tests.Length; i++)
             {
-                Console.WriteLine($"--- Running Teset {i + 1} ---");
+                Console.WriteLine($"--- Running Test {i + 1} ---");
                 Console.WriteLine($"Q: {tests[i].Question}");
 
                 // Target Agent attempts to answer
@@ -51,7 +51,7 @@ namespace Evaluator
                     agentResponse,
                     tests[i].GroundTruth);
 
-                string passFail = evaluation.Passed ? "✅ PASS" : "❌ FAIL";
+                string passFail = evaluation.Passed ? "PASS" : "FAIL";
                 Console.WriteLine($"\nVerdict: {passFail} (Score: {evaluation.Score}/5)");
                 Console.WriteLine($"Judge's Reasoning: {evaluation.Reasoning}\n");
             }
