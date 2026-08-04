@@ -10,6 +10,7 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.78.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.78.0-alpha" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.16.17" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,6 @@
 
 using Microsoft.SemanticKernel;
+using Scalar.AspNetCore;
 
 namespace UniversalProjectManager.Api
 {
@@ -10,11 +11,14 @@ namespace UniversalProjectManager.Api
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+
             builder.Services.AddControllers();
+            builder.Services.AddOpenApi();
 
             // Configure the SemanticKernel for dependency injection
             builder.Services.AddTransient<Kernel>(sp =>
             {
+
                 string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
                     ?? throw new Exception("GEMINI_API_KEY is missing");
 
@@ -32,12 +36,21 @@ namespace UniversalProjectManager.Api
 
             // 4. Register the Orchestrator
             builder.Services.AddTransient<ProjectOrchestrator>();
+
             var app = builder.Build();
 
-            // Map controller routes
-            app.MapControllers();
+            // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
+            {
+                app.MapOpenApi();
+                app.MapScalarApiReference(options => options.HideDocumentDownload()); // serves UI at /scalar/v1
+                app.MapGet("/", () => Results.Redirect("/scalar/v1"))
+                    .ExcludeFromDescription();
+            }
 
-            Console.WriteLine("Universal Project Manager API is running...");
+            app.UseHttpsRedirection();
+            app.UseAuthorization();
+            app.MapControllers();
             app.Run();
         }
     }

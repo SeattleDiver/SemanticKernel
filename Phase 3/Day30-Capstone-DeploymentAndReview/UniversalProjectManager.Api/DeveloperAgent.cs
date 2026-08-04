@@ -23,7 +23,7 @@ namespace UniversalProjectManager
 
             if (!pendingTasks.Any())
             {
-                Console.WriteLine("   [DEVELOPER] No pending tasks found for this agent.");
+                Console.WriteLine("  [DEVELOPER] No pending tasks found for this agent.");
                 return;
             }
 
@@ -37,7 +37,7 @@ namespace UniversalProjectManager
             // Execute the tasks sequentially
             foreach(var task in pendingTasks)
             {
-                Console.WriteLine($"   [DEVELOPER] Executing task: {task.Id} {task.Description}");
+                Console.WriteLine($"  [DEVELOPER] Executing task: {task.Id} {task.Description}");
                 string prompt = $@"
                     You are a Senior C# Developer.
                     Project Goal: {state.RefinedGoal}
