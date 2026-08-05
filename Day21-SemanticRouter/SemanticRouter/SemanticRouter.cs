@@ -49,8 +49,18 @@ namespace SemanticRouter
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
-            return JsonSerializer.Deserialize<RouteDecision>(response.Content ?? "{}")
-                ?? new RouteDecision { Intent = "GENERAL" };
+
+            // Step: Malformed/truncated JSON should never crash the console loop -
+            // fall back to GENERAL, the same safe default used for a null result below.
+            try
+            {
+                return JsonSerializer.Deserialize<RouteDecision>(response.Content ?? "{}")
+                    ?? new RouteDecision { Intent = "GENERAL" };
+            }
+            catch (JsonException)
+            {
+                return new RouteDecision { Intent = "GENERAL", Reasoning = "Router returned unparseable JSON; defaulted to GENERAL." };
+            }
         }
     }
 }

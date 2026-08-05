@@ -24,7 +24,7 @@ namespace SemanticRouter
 
         [KernelFunction("GetBalance")]
         [Description("Retrieves the current balance for an account.")]
-        public string GetBalance([Description("No account ID")] string accountId)
+        public string GetBalance([Description("The account ID")] string accountId)
         {
             return $"[SYSTEM API] Account {accountId} has an outstanding balance of $145.50.";
         }
