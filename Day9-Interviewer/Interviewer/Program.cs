@@ -53,9 +53,25 @@ namespace Interviewer
             };
 
             // 4. Initial propt to trigger the first question
-            var response = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel: kernel);
-            Console.WriteLine($"Interviewer: {response.Content}");
-            chatHistory.AddAssistantMessage(response.Content);
+            ChatMessageContent response;
+            try
+            {
+                response = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel: kernel);
+            }
+            catch (Exception ex)
+            {
+                // Step: An unguarded API failure here would crash the app before the interview even starts.
+                Console.WriteLine($"The interviewer is unavailable right now: {ex.Message}");
+                return;
+            }
+
+            // Step: Guard against a null/empty first response the same way the loop below already does,
+            // since AddAssistantMessage requires a non-null string.
+            if (response.Content != null)
+            {
+                Console.WriteLine($"Interviewer: {response.Content}");
+                chatHistory.AddAssistantMessage(response.Content);
+            }
 
             // 5. The interview loop
             while (true)
@@ -70,7 +86,18 @@ namespace Interviewer
                 chatHistory.AddUserMessage(candidateAnswer);
 
                 // Get the next response based on the full history
-                var nextQuestion = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel: kernel);
+                ChatMessageContent nextQuestion;
+                try
+                {
+                    nextQuestion = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel: kernel);
+                }
+                catch (Exception ex)
+                {
+                    // Step: A transient API failure shouldn't end the interview -
+                    // keep chatHistory intact and let the candidate retry.
+                    Console.WriteLine($"\nThe interviewer is momentarily unavailable ({ex.Message}). Please try again.");
+                    continue;
+                }
                 Console.WriteLine($"\nInterviewer: {nextQuestion.Content}");
 
                 // Add the interviewer's response to the history
