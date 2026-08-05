@@ -43,7 +43,16 @@ namespace UniversalProjectManager
             // Pass the list of agents to the orchestrator
             ProjectOrchestrator orchestrator = new ProjectOrchestrator(agents);
 
-            await orchestrator.RunProjectAsync(projectState);
+            try
+            {
+                // Step: guard the run so a failed Gemini call doesn't crash the whole console session
+                await orchestrator.RunProjectAsync(projectState);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\nOrchestration failed: {ex.Message}");
+                return;
+            }
 
             // Review the final state
             Console.WriteLine("\n--- FINAL PROJECT STATE ---");

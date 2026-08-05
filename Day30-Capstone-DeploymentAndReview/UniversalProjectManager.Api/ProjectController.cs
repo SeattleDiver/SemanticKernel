@@ -28,8 +28,15 @@ namespace UniversalProjectManager.Api.Controllers
                 OriginalRequest = userGoal
             };
 
-            // Run the agentic workflow
-            await _orchestrator.RunProjectAsync(projectState);
+            try
+            {
+                // Step: guard the run so a failed Gemini call returns a clear error instead of an unhandled 500
+                await _orchestrator.RunProjectAsync(projectState);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(502, $"Project generation failed: {ex.Message}");
+            }
 
             // Return the completed state as JSON to the client
             return Ok(projectState);

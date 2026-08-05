@@ -51,7 +51,8 @@ namespace UniversalProjectManager
                 }
                 else
                 {
-                    Console.WriteLine("  [REVIEWER] Task {task.Id} rejected. Reason: {review}");
+                    // Step: this needs the '$' prefix, otherwise the placeholders print literally instead of interpolating
+                    Console.WriteLine($"  [REVIEWER] Task {task.Id} rejected. Reason: {review}");
                     // Mutate state to force re-work
                     task.IsCompleted = false;
                     task.Description = $"[REVIEWER FEEDBACK] {review}";
