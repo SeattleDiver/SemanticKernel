@@ -8,7 +8,9 @@ namespace UniversalProjectManager
     /// </summary>
     internal class DeveloperAgent : IProjectAgent
     {
-        public readonly Kernel _baseKernel;
+        // Step: private like every other agent's kernel field, so callers must go through
+        // the IProjectAgent contract instead of reaching in and grabbing the kernel directly.
+        private readonly Kernel _baseKernel;
         public string Name => "Developer";
 
         public DeveloperAgent(Kernel baseKernel)
@@ -46,11 +48,21 @@ namespace UniversalProjectManager
                     Write only the C# code to fulfill this task.  Do not include markdown formatting or explanations.
                 ";
 
-                var result = await isolatedKernel.InvokePromptAsync(prompt, new KernelArguments(settings));
+                try
+                {
+                    var result = await isolatedKernel.InvokePromptAsync(prompt, new KernelArguments(settings));
 
-                // Update the shared state
-                task.Result = result.ToString().Trim();
-                task.IsCompleted = true;
+                    // Update the shared state
+                    task.Result = result.ToString().Trim();
+                    task.IsCompleted = true;
+                }
+                catch (Exception ex)
+                {
+                    // Step: a network hiccup, rate limit, or content filter here would otherwise crash
+                    // the whole console session. Report it and leave this task pending instead, so the
+                    // remaining tasks in the loop still get a chance to run.
+                    Console.WriteLine($"   [DEVELOPER] Failed to complete task {task.Id}: {ex.Message}");
+                }
             }
         }
     }

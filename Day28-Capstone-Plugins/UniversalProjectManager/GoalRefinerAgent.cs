@@ -34,10 +34,19 @@ namespace UniversalProjectManager
                 Temperature = 0.1 
             };
 
-            var result = await _kernel.InvokePromptAsync(prompt, new KernelArguments(settings));
+            try
+            {
+                var result = await _kernel.InvokePromptAsync(prompt, new KernelArguments(settings));
 
-            // Mutate the shared state with the refined goal
-            state.RefinedGoal = result.ToString().Trim();
+                // Mutate the shared state with the refined goal
+                state.RefinedGoal = result.ToString().Trim();
+            }
+            catch (Exception ex)
+            {
+                // Step: a network hiccup, rate limit, or content filter here would otherwise crash
+                // the whole console session. Report it and leave RefinedGoal at its default instead.
+                Console.WriteLine($"[{Name}] Failed to refine goal: {ex.Message}");
+            }
         }
     }
 }

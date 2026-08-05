@@ -40,7 +40,17 @@ namespace UniversalProjectManager
                 Temperature = 0.2 // Low temperatore for deterministic planning
             };
 
-            await isolatedKernel.InvokePromptAsync(prompt, new KernelArguments(settings));
+            try
+            {
+                await isolatedKernel.InvokePromptAsync(prompt, new KernelArguments(settings));
+            }
+            catch (Exception ex)
+            {
+                // Step: a network hiccup, rate limit, or content filter here would otherwise crash
+                // the whole console session. Report it and leave state.Tasks empty instead;
+                // the Developer stage already tolerates finding zero pending tasks.
+                Console.WriteLine($"[{Name}] Failed to plan tasks: {ex.Message}");
+            }
         }
     }
 }
