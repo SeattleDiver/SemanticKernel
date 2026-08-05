@@ -65,8 +65,17 @@ Assistant: (Cite the section number in your answer)
                 };
 
                 // 5. Invoke prompt
-                var result = await kernel.InvokePromptAsync(promptTemplate, arguments);
-                Console.WriteLine($"\nAI: {result}\n");
+                // A transient failure here (network hiccup, rate limit, etc.) should not
+                // kill the whole console session - report it and let the student keep asking.
+                try
+                {
+                    var result = await kernel.InvokePromptAsync(promptTemplate, arguments);
+                    Console.WriteLine($"\nAI: {result}\n");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"\n[Error] The request failed: {ex.Message}\n");
+                }
             }
 
         }
