@@ -72,6 +72,15 @@ namespace RagAgent
 
             Console.WriteLine($"[RAG RETRIEVAL] Found relevant document: {bestMatch?.Text}");
 
+            // Step 7b: Guard against an empty/missing knowledge base. Without this,
+            // a null bestMatch would crash a few lines below with a raw
+            // NullReferenceException instead of a clear, friendly message.
+            if (bestMatch is null)
+            {
+                Console.WriteLine("No knowledge base documents are available to answer this question.");
+                return;
+            }
+
             // Step 8: Build the RAG prompt
             string promptTemplate = @"
 You are a helpful company librarian.  Answer the user's question using ONLY the provide context.
