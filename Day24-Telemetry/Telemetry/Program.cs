@@ -62,15 +62,29 @@ namespace Telemetry
             Console.WriteLine($"User: {prompt}\n");
             Console.WriteLine("--- EXECUTING & TRACING ---");
 
-            // The tracer is running in the background and will intercept activities here
-            var result = await kernel.InvokePromptAsync(prompt, arguments);
+            try
+            {
+                // The tracer is running in the background and will intercept activities here
+                var result = await kernel.InvokePromptAsync(prompt, arguments);
 
-            Console.WriteLine($"\nFinal AI Output: {result}");
+                Console.WriteLine($"\nFinal AI Output: {result}");
+            }
+            catch (Exception ex)
+            {
+                // A dropped connection or rejected API call shouldn't crash the
+                // session with an unhandled exception - and for this lesson it's
+                // doubly important, since the trace of *how* it failed is exactly
+                // the kind of thing OTel is here to capture.
+                Console.WriteLine($"\n[ERROR] The request failed: {ex.Message}");
+            }
+            finally
+            {
+                // Ensure all traces are flushed to the console before the program exits,
+                // whether the call above succeeded or failed.
+                tracerProvider.ForceFlush();
+            }
 
-            // Ensure all traces are flushed to the console before the program exits.
-            tracerProvider.ForceFlush();
-            Console.WriteLine("\nSession complete.  Review Open Telemetry traces above."); 
-
+            Console.WriteLine("\nSession complete.  Review Open Telemetry traces above.");
         }
     }
 }
