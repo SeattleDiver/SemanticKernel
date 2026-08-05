@@ -54,13 +54,24 @@ namespace Day5Researcher
             Console.WriteLine($"Question: {prompt}\n");
             Console.WriteLine("Agent is thinking and utilizing Gemini's built-in Google Search grounding...\n");
 
-            // Step 4: Execute the prompt
-            var result = await kernel.InvokePromptAsync(prompt, arguments);
+            // Step 4: Execute the prompt. Wrapped in try/catch because this is
+            // the network call to the model - grounding adds an extra live
+            // search hop beyond the base chat call, so a bad key, rate limit,
+            // or connectivity blip here would otherwise crash the whole
+            // program with a raw stack trace instead of a readable message.
+            try
+            {
+                var result = await kernel.InvokePromptAsync(prompt, arguments);
 
-            // Step 5: Display the final result
-            Console.WriteLine("--- AI RESEARCH REPORT ---");
-            Console.WriteLine(result.ToString().Trim());
-            Console.WriteLine("--------------------------");
+                // Step 5: Display the final result
+                Console.WriteLine("--- AI RESEARCH REPORT ---");
+                Console.WriteLine(result.ToString().Trim());
+                Console.WriteLine("--------------------------");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Research request failed: {ex.Message}");
+            }
         }
     }
 }
