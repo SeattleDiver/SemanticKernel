@@ -55,7 +55,8 @@ namespace AdvancedRAG
 
             // 4. Test the Hybrid RAG workflow
             string query = "What is the maintenance schedule for the Alpha-99";
-            Console.WriteLine($"\bUser Query: {query}");
+            // Step 4a: "\n" for a blank line before the query, not "\b" (backspace) - easy escape-sequence typo to miss
+            Console.WriteLine($"\nUser Query: {query}");
 
             string response = await ragAgent.AnswerAsync(query);
             Console.WriteLine($"\nAI Answer: {response}");
