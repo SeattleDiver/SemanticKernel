@@ -44,6 +44,7 @@ namespace Day18NativeOrchestration
             chatHistory.AddUserMessage($"Product: {product}");
 
             bool isComplete = false;
+            bool hadError = false;
             int currentIteration = 0;
             int MaxIterations = 4;
 
@@ -57,7 +58,21 @@ namespace Day18NativeOrchestration
 
                 // Inject the persona at index 0
                 chatHistory.Insert(0, new ChatMessageContent(AuthorRole.System, copywriterPersona));
-                var copywriterResult = await chatService.GetChatMessageContentAsync(chatHistory, kernel: kernel);
+
+                ChatMessageContent copywriterResult;
+                try
+                {
+                    // Step 5: Guard the API call so a transient Gemini failure reports
+                    // cleanly instead of crashing the app mid-collaboration.
+                    copywriterResult = await chatService.GetChatMessageContentAsync(chatHistory, kernel: kernel);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"\n[ERROR] Copywriter call failed: {ex.Message}");
+                    chatHistory.RemoveAt(0);
+                    hadError = true;
+                    break;
+                }
 
                 // Cleanup the system Persona at index 0
                 chatHistory.RemoveAt(0);
@@ -76,7 +91,20 @@ namespace Day18NativeOrchestration
                 // ---------------------------
                 chatHistory.Insert(0, new ChatMessageContent(AuthorRole.System, editorPersona));
 
-                var editorResult = await chatService.GetChatMessageContentAsync(chatHistory, kernel: kernel);
+                ChatMessageContent editorResult;
+                try
+                {
+                    // Step 5: Same guard as the Copywriter call - fail loudly but
+                    // gracefully instead of taking the whole session down.
+                    editorResult = await chatService.GetChatMessageContentAsync(chatHistory, kernel: kernel);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"\n[ERROR] Editor call failed: {ex.Message}");
+                    chatHistory.RemoveAt(0);
+                    hadError = true;
+                    break;
+                }
 
                 chatHistory.RemoveAt(0);
 
@@ -96,7 +124,12 @@ namespace Day18NativeOrchestration
                 currentIteration++;
             }
 
-            Console.WriteLine(isComplete ? "\nWorkflow Finalized." : "\nMax iterations reached.");
+            if (isComplete)
+                Console.WriteLine("\nWorkflow Finalized.");
+            else if (hadError)
+                Console.WriteLine("\nCollaboration stopped early due to an error.");
+            else
+                Console.WriteLine("\nMax iterations reached.");
         }
     }
 }
