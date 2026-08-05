@@ -88,10 +88,22 @@ namespace PromptLogicPlugins
 
             Console.WriteLine($"--- Processing {user.Name} via Built-in Plugins ---");
 
-            var result = await kernel.InvokePromptAsync(promptTemplate, arguments);
+            // Step: Execute the prompt. Wrapped in try/catch because this one call
+            // does double duty - it renders the template (which invokes
+            // GetPurchaseList/GetTierInstructions) AND sends the request to the
+            // model, so a plugin error, a bad key, or a network blip would
+            // otherwise crash the whole program with a raw stack trace.
+            try
+            {
+                var result = await kernel.InvokePromptAsync(promptTemplate, arguments);
 
-            Console.WriteLine("\nAI Response:");
-            Console.WriteLine(result.ToString());
+                Console.WriteLine("\nAI Response:");
+                Console.WriteLine(result.ToString());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Request failed: {ex.Message}");
+            }
         }
     }
 }
