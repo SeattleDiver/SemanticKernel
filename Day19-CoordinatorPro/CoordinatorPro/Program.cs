@@ -101,9 +101,20 @@ namespace CoordinatorPro
                 history.RemoveAt(0);
                 history.Remove(ghostNudge);
 
-                // Parse the guaranteed JSON
-                RoutingDecision decision = JsonSerializer.Deserialize<RoutingDecision>(decisionResponse.Content ?? "{}")
-                    ?? new RoutingDecision();
+                // Parse the guaranteed JSON. ResponseMimeType makes malformed JSON rare,
+                // but a truncated response or a safety-filter block can still slip
+                // through - catch that instead of letting a JsonException crash the app.
+                RoutingDecision decision;
+                try
+                {
+                    decision = JsonSerializer.Deserialize<RoutingDecision>(decisionResponse.Content ?? "{}")
+                        ?? new RoutingDecision();
+                }
+                catch (JsonException)
+                {
+                    Console.WriteLine("\n[ERROR] Coordinator returned malformed JSON. Ending run early.");
+                    return;
+                }
 
                 Console.WriteLine($"\n[THOUGHT]: {decision.Reasoning}");
                 Console.WriteLine($"\n[ROUTE]: {decision.NextAgent}");
