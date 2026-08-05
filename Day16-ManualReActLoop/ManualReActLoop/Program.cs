@@ -65,14 +65,17 @@ namespace ManualReActLoop
                 var settings = new GeminiPromptExecutionSettings { ToolCallBehavior = GeminiToolCallBehavior.EnableKernelFunctions };
                 var result = await chatService.GetChatMessageContentAsync(history, settings, kernel);
 
-                if (string.IsNullOrEmpty(result.Content)) continue;
-
-                // Print the AI's THOUGHT and ACTION
-                Console.WriteLine(result.Content);
-                history.AddAssistantMessage(result.Content);
-
-                // 3. Check if the AI wants to call a tool
+                // 3. Check for a tool-call request BEFORE looking at Content. Gemini
+                // often returns an empty Content string when it is requesting a
+                // function call instead of talking - checking Content first (and
+                // skipping the turn when it's empty) would silently ignore that
+                // function call forever and stall the loop until the iteration cap.
                 var toolCalls = result.Items.OfType<FunctionCallContent>().ToList();
+
+                // Print the AI's THOUGHT and ACTION text, if any was produced this turn.
+                if (!string.IsNullOrEmpty(result.Content)) Console.WriteLine(result.Content);
+                history.Add(result); // Keep the full response (text + FunctionCallContent) in history.
+
                 if (toolCalls.Count == 0) break; // No more tools? We are done.
 
                 foreach (var call in toolCalls)
