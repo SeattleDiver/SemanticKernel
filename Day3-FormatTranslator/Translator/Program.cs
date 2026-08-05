@@ -60,13 +60,23 @@ User: Translate this text into JSON:
             Console.WriteLine(unstructuredData);
             Console.WriteLine("Transformatin natural language to JSON...");
 
-            // Step 6. Execute the prompt
-            var result = await kernel.InvokePromptAsync(promptTemplate, arguments);
+            // Step 6. Execute the prompt. Wrapped in try/catch because this is
+            // the network call to the model - a bad key, rate limit, or
+            // connectivity blip would otherwise crash the whole program with
+            // a raw stack trace instead of a readable message.
+            try
+            {
+                var result = await kernel.InvokePromptAsync(promptTemplate, arguments);
 
-            // Step 7. Output the result
-            Console.WriteLine("--- STRING JSON OUTPUT ---");
-            Console.WriteLine(result.ToString());
-            Console.WriteLine("--------------------------");
+                // Step 7. Output the result
+                Console.WriteLine("--- STRING JSON OUTPUT ---");
+                Console.WriteLine(result.ToString());
+                Console.WriteLine("--------------------------");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Translation failed: {ex.Message}");
+            }
         }
     }
 }
