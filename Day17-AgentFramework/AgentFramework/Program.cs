@@ -52,12 +52,22 @@ namespace AgentFramework
                 // The Agent Framework handles the context and generation
                 Console.WriteLine("\n--- AGENT IS THINKING ---");
 
-                await foreach (var message in travelAgent.InvokeAsync(chatHistory))
+                try
                 {
-                    Console.WriteLine($"\n{message.Message.AuthorName}: {message.Message.Content}");
+                    await foreach (var message in travelAgent.InvokeAsync(chatHistory))
+                    {
+                        Console.WriteLine($"\n{message.Message.AuthorName}: {message.Message.Content}");
 
-                    // Add the agent's response to the history to maintain context
-                    chatHistory.Add(message);
+                        // Add the agent's response to the history to maintain context
+                        chatHistory.Add(message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // 5. A failed call (rate limit, network blip, bad key) would otherwise
+                    // throw out of the await foreach and crash the whole console session.
+                    // Report the error and let the user try again instead of losing the chat.
+                    Console.WriteLine($"\n[Error] The agent could not complete this turn: {ex.Message}");
                 }
             }
 
