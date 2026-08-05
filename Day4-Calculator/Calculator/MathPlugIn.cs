@@ -41,6 +41,14 @@ namespace Calculator
         [Description("Divides the first number by the second number.")]
         public double Divide([Description("The number to divide")] double number1, [Description("The number to divide by")] double number2)
         {
+            // Guard: double division by zero doesn't throw, it silently returns
+            // Infinity/NaN. Throw a descriptive exception instead so Semantic
+            // Kernel can surface a real tool error back to the model.
+            if (number2 == 0)
+            {
+                throw new DivideByZeroException("Cannot divide by zero.");
+            }
+
             Console.WriteLine($"[NATIVE CODE EXECUTION] Dividing {number1} / {number2}");
             return number1 / number2;
         }
