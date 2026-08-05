@@ -16,8 +16,11 @@ namespace FunctionFilters
             // The 'next' delegate allows the Kernel to actually render the prompt
             await next(context);
 
-            // Now that it's rendered, we can inspect or modify it
-            Console.Write("\n[PROMPT LOGGER] Intercepted payload headed to Gemini:");
+            // Now that it's rendered, we can inspect or modify it.
+            // Step: Use WriteLine (not Write) for the header so the prompt
+            // text always starts on its own line - this is a logging filter,
+            // so the printed output needs to stay readable.
+            Console.WriteLine("\n[PROMPT LOGGER] Intercepted payload headed to Gemini:");
             Console.WriteLine(context.RenderedPrompt);
         }
     }
