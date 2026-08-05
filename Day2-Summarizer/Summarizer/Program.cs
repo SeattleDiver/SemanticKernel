@@ -31,7 +31,7 @@ namespace Summarizer
             // We use the {{$variableName}} syntax to indicate where the input text should be inserted in the prompt.
             string promptTemplate = @"
                 Read the following text and summarize it into exactly 3 bullet points.
-                Focus on the main ideas and ingore minor details.
+                Focus on the main ideas and ignore minor details.
 
                 TEXT TO SUMMARIZE:
                 {{$articleContent}}
@@ -40,21 +40,30 @@ namespace Summarizer
             ";
 
             // Step 4: Map the variables to the prompt template
-            var aguments = new KernelArguments
+            var arguments = new KernelArguments
             {
                 { "articleContent", textToSummarize }
             };
 
             Console.WriteLine("Generating summary...");
 
-            // Step 5: Execute the prompt
-            var result = await kernel.InvokePromptAsync(promptTemplate, aguments);
+            // Step 5: Execute the prompt. Wrapped in try/catch because this is
+            // the network call to the model - a bad key, rate limit, or
+            // connectivity blip would otherwise crash the whole program with
+            // a raw stack trace instead of a readable message.
+            try
+            {
+                var result = await kernel.InvokePromptAsync(promptTemplate, arguments);
 
-            // Step 6: Display the result
-            Console.WriteLine("--- AI Summary ---");
-            Console.WriteLine(result.ToString());
-            Console.WriteLine("------------------");
-
+                // Step 6: Display the result
+                Console.WriteLine("--- AI Summary ---");
+                Console.WriteLine(result.ToString());
+                Console.WriteLine("------------------");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Summarization failed: {ex.Message}");
+            }
         }
 
         // Helper method to generate a long text file for our demo
