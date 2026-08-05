@@ -51,10 +51,12 @@ namespace UniversalProjectManager
                 }
                 else
                 {
-                    Console.WriteLine("  [REVIEWER] Task {task.Id} rejected. Reason: {review}");
-                    // Mutate state to force re-work
+                    // Step: interpolate the log line so the real task ID and rejection reason are printed
+                    Console.WriteLine($"  [REVIEWER] Task {task.Id} rejected. Reason: {review}");
+                    // Mutate state to force re-work. Append the feedback instead of overwriting so the
+                    // Developer's retry prompt still contains the original task description.
                     task.IsCompleted = false;
-                    task.Description = $"[REVIEWER FEEDBACK] {review}";
+                    task.Description += $" [REVIEWER FEEDBACK] {review}";
                 }
             }
         }
