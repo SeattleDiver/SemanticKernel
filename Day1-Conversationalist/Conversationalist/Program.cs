@@ -56,8 +56,20 @@ namespace Conversationalist
 
                 chatHistory.AddUserMessage(userInput);
 
-                // Ask the AI to generate a response based on the chat history and the latest user input
-                var response = await chatCompletionService.GetChatMessageContentAsync(chatHistory, kernel: kernel);
+                // Step 7: Ask the AI to generate a response based on the chat history and the latest user input.
+                // The call is wrapped in a try/catch because a network blip, an invalid/expired
+                // API key, or a rate-limit response would otherwise throw here and crash the
+                // whole chat session, losing the conversation instead of just this one turn.
+                ChatMessageContent response;
+                try
+                {
+                    response = await chatCompletionService.GetChatMessageContentAsync(chatHistory, kernel: kernel);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Sorry, something went wrong talking to the AI: {ex.Message}");
+                    continue;
+                }
 
                 Console.WriteLine($"AI response: {response.Content}");
 
