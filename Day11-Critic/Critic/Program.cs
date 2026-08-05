@@ -64,10 +64,22 @@ User: Review this c# code: {{$input}}";
             };
 
             Console.WriteLine("The critic is analyzing the code...\n");
-            var result = await kernel.InvokePromptAsync(criticPrompt, arguments);
 
-            Console.WriteLine("--- Critique Result ---");
-            Console.WriteLine(result.ToString().Trim());
+            // 5. A live API call can fail (bad key, rate limit, network, content
+            // safety rejection). Catch it so students get a clear message instead
+            // of an unhandled exception crashing the whole session.
+            try
+            {
+                var result = await kernel.InvokePromptAsync(criticPrompt, arguments);
+
+                Console.WriteLine("--- Critique Result ---");
+                Console.WriteLine(result.ToString().Trim());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Critique failed - see error below:");
+                Console.WriteLine(ex.Message);
+            }
         }
     }
 }
