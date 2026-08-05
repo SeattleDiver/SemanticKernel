@@ -51,9 +51,20 @@ namespace Evaluator
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
 
-            // Deserialize the results
-            return JsonSerializer.Deserialize<EvaluationResult>(response.Content ?? "{}")
-                ?? new EvaluationResult { Passed = false, Reasoning = "Failed to parse JSON" };
+            // Deserialize the results. The judge can occasionally return
+            // malformed or truncated JSON even with ResponseMimeType set,
+            // so we catch the parse failure here and fail this test case
+            // gracefully instead of letting an unhandled exception abort
+            // the whole evaluation suite.
+            try
+            {
+                return JsonSerializer.Deserialize<EvaluationResult>(response.Content ?? "{}")
+                    ?? new EvaluationResult { Passed = false, Reasoning = "Failed to parse JSON" };
+            }
+            catch (JsonException)
+            {
+                return new EvaluationResult { Passed = false, Reasoning = "Failed to parse JSON" };
+            }
         }
     }
 }
