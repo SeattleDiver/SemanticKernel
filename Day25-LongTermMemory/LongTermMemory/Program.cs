@@ -1,11 +1,12 @@
 ﻿// ---------------------------------------------------------------------------
 // Day 25: Long-Term Memory
 //
-// Intended to give an agent persistent, cross-session memory of facts about
-// the user (see MemoryManager.cs/UserMemory.cs: facts are extracted from
-// conversation and saved to user_memory.json so they survive a restart).
-// This entry point is still a placeholder - it doesn't yet wire up a Kernel,
-// chat loop, or MemoryManager instance.
+// Gives an agent persistent, cross-session memory of facts about the user
+// (see MemoryManager.cs/UserMemory.cs: facts are extracted from conversation
+// and saved to user_memory.json so they survive a restart). This entry point
+// wires up the Kernel, the MemoryManager (fact extraction/persistence), and
+// the MemoryAgent (chat), then runs the conversational loop that ties them
+// together.
 // ---------------------------------------------------------------------------
 
 

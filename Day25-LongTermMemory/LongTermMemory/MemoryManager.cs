@@ -27,13 +27,23 @@ namespace LongTermMemory
         }
 
         // Reads the memory file from disk if it exists; otherwise starts fresh
-        // with an empty fact list rather than failing on first run.
+        // with an empty fact list rather than failing on first run. Also falls
+        // back to a fresh UserMemory (instead of crashing on startup) if the
+        // file is empty, contains literal "null", or is otherwise corrupted.
         private UserMemory LoadMemory()
         {
             if (File.Exists(_filePath))
             {
-                string json = File.ReadAllText(_filePath);
-                return JsonSerializer.Deserialize<UserMemory>(json);
+                try
+                {
+                    string json = File.ReadAllText(_filePath);
+                    return JsonSerializer.Deserialize<UserMemory>(json) ?? new UserMemory();
+                }
+                catch (JsonException)
+                {
+                    Console.WriteLine($"   [MEMORY MANAGER] Warning: '{_filePath}' is corrupted or unreadable; starting with fresh memory.");
+                    return new UserMemory();
+                }
             }
             return new UserMemory();
         }
