@@ -32,10 +32,10 @@ namespace CodeGenerator
                 "You are an expert C# developer agent. " +
                 "Your goal is to write clean, maintainable, and high-performance C# code. " +
                 "Rules: " +
-                "1. Always user modern .NET 8 syntax (file-scoped namespaces, primary constructors where applicable). " +
+                "1. Always use modern C# syntax (file-scoped namespaces, primary constructors where applicable). " +
                 "2. Include XML documentation comments for all public members. " +
                 "3. Ensure the code is self-contained and includes necessary using directives. " +
-                "4. Output only the code within markdown blocks.  Not conversational filter."
+                "4. Output only the code within markdown blocks. No conversational filler."
             );
 
             Console.WriteLine("Developer agent ready.  Describe the class or function you need.");
@@ -58,13 +58,23 @@ namespace CodeGenerator
                     TopP = 0.1
                 };
 
-                var response = await chatService.GetChatMessageContentAsync(chatHistory, settings, kernel);
-                if (response.Content != null)
+                // 4. Guard the model call: a transient API error or safety-filter
+                // rejection would otherwise crash the whole session and lose every
+                // snippet generated so far, since it only ever lived in memory.
+                try
                 {
-                    Console.WriteLine(response.Content);
+                    var response = await chatService.GetChatMessageContentAsync(chatHistory, settings, kernel);
+                    if (response.Content != null)
+                    {
+                        Console.WriteLine(response.Content);
 
-                    // Add to history so the agent can "refactor" or "debug" in the next turn.
-                    chatHistory.AddAssistantMessage(response.Content);
+                        // Add to history so the agent can "refactor" or "debug" in the next turn.
+                        chatHistory.AddAssistantMessage(response.Content);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"\n[Error] The request failed: {ex.Message}\nYou can try again or type 'exit'.");
                 }
             }
         }
