@@ -39,6 +39,7 @@ namespace HumanInTheLoop
             history.AddUserMessage($"Draft an email announcement regarding: {topic}");
 
             bool isApproved = false;
+            bool aiServiceFailed = false;
             int maxRevisions = 5;
             int currentRevision = 0;
 
@@ -46,7 +47,22 @@ namespace HumanInTheLoop
             while(!isApproved && currentRevision < maxRevisions)
             {
                 Console.WriteLine("\n[AI IS DRAFTING...]");
-                string draft = await aiWorker.GenerateDraftAsync(history);
+
+                string draft;
+                try
+                {
+                    draft = await aiWorker.GenerateDraftAsync(history);
+                }
+                catch (Exception ex)
+                {
+                    // Step: A transient network/API failure should not crash the
+                    // whole approval workflow with an unhandled exception - report
+                    // it and stop the loop cleanly instead.
+                    Console.WriteLine($"\n[ERROR] The AI service call failed: {ex.Message}");
+                    Console.WriteLine("Workflow stopped due to an AI service error.");
+                    aiServiceFailed = true;
+                    break;
+                }
 
                 // 4. Yield control to the human
                 ReviewResult result = gatekeeper.ReviewDraft(draft);
@@ -67,7 +83,7 @@ namespace HumanInTheLoop
                 currentRevision++;
             }
 
-            if (!isApproved)
+            if (!isApproved && !aiServiceFailed)
             {
                 Console.WriteLine("\n Maximum revisions reached.  Workflow stopped.");
             }

@@ -28,15 +28,24 @@ namespace HumanInTheLoop
             var systemMessage = new ChatMessageContent(AuthorRole.System, _persona);
             history.Insert(0, systemMessage);
 
-            // 2. enerate the draft using Gemini
-            var result = await _chatService.GetChatMessageContentAsync(history);
-            string draft = result.Content ?? "No draft generated.";
+            try
+            {
+                // 2. enerate the draft using Gemini
+                var result = await _chatService.GetChatMessageContentAsync(history);
+                string draft = result.Content ?? "No draft generated.";
 
-            // 3. Clean up the Persona to keep history pure, then append the AI's response
-            history.RemoveAt(0);
-            history.AddAssistantMessage(draft);
-            
-            return draft;
+                // 3. Append the AI's response now that the call succeeded
+                history.AddAssistantMessage(draft);
+
+                return draft;
+            }
+            finally
+            {
+                // Step: Always remove the temporary persona message, even if the
+                // call above throws. Without this, a failed call would leave the
+                // system message stuck at index 0 and corrupt every later attempt.
+                history.RemoveAt(0);
+            }
         }
 
     }
