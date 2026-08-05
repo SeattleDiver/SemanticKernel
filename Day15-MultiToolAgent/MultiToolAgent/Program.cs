@@ -64,9 +64,19 @@ namespace MultiToolAgent
             Console.WriteLine($"User Request: {userRequest}");
             Console.WriteLine("--- AGENT REASONING AND TOOL USER ---");
 
-            var result = await kernel.InvokePromptAsync(userRequest, new KernelArguments(settings));
-            Console.WriteLine($"\nFinal response: {result}");
-
+            // 5. Guard the model call - Gemini's API call and the auto-invoked
+            // tool round trips behind it are the riskiest part of this program;
+            // without a catch here, a network hiccup or API error would crash
+            // the whole console app instead of just failing this one request.
+            try
+            {
+                var result = await kernel.InvokePromptAsync(userRequest, new KernelArguments(settings));
+                Console.WriteLine($"\nFinal response: {result}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\nAgent run failed: {ex.Message}");
+            }
         }
     }
 }
