@@ -9,7 +9,6 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Google;
@@ -30,6 +29,28 @@ namespace Day6FileManager
             _currentDirectory = Directory.GetCurrentDirectory();
         }
 
+        // Step 1b: Resolve a requested file name to a real path that is
+        // guaranteed to stay inside the sandbox. Path.Combine alone does not
+        // stop something like "../secrets.txt" or an absolute path from
+        // escaping _currentDirectory - we have to resolve the full path and
+        // verify it still lives under the sandbox root before touching disk.
+        private bool TryResolveSandboxedPath(string fileName, out string resolvedPath, out string error)
+        {
+            string sandboxRoot = Path.GetFullPath(_currentDirectory) + Path.DirectorySeparatorChar;
+            string fullPath = Path.GetFullPath(Path.Combine(_currentDirectory, fileName));
+
+            if (!fullPath.StartsWith(sandboxRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                resolvedPath = string.Empty;
+                error = $"Error: '{fileName}' resolves outside the sandboxed directory and was blocked.";
+                return false;
+            }
+
+            resolvedPath = fullPath;
+            error = string.Empty;
+            return true;
+        }
+
         [KernelFunction("ListFiles")]
         [Description("Lists the names of all the files in the current directory.")]
         public string ListFiles()
@@ -46,10 +67,20 @@ namespace Day6FileManager
         public async Task<string> ReadFileAsync([Description("The exact name of the file to read (e.g. 'document.txt')")] string fileName)
         {
             Console.WriteLine($"[PLUGIN EXECUTING] AI is reading file: '{fileName}'...");
-            string path = Path.Combine(_currentDirectory, fileName);
+            if (!TryResolveSandboxedPath(fileName, out string path, out string sandboxError)) return sandboxError;
             if (!File.Exists(path)) return $"Error: the file '{fileName}' does not exist.";
 
-            return await File.ReadAllTextAsync(path);
+            try
+            {
+                return await File.ReadAllTextAsync(path);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                // A locked, permission-denied, or otherwise unreadable file must not
+                // throw uncaught here - that would crash the whole chat loop instead
+                // of letting the AI see and react to a normal tool failure.
+                return $"Error: could not read '{fileName}' ({ex.Message}).";
+            }
         }
 
         [KernelFunction("WriteFile")]
@@ -60,8 +91,18 @@ namespace Day6FileManager
             )
         {
             Console.WriteLine($"[PLUGIN EXECUTING] AI is writing data to file: '{fileName}'...");
-            string path = Path.Combine(_currentDirectory, fileName);
-            await File.WriteAllTextAsync(path, content);
+            if (!TryResolveSandboxedPath(fileName, out string path, out string sandboxError)) return sandboxError;
+
+            try
+            {
+                await File.WriteAllTextAsync(path, content);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                // Same reasoning as ReadFileAsync: report the disk failure back to the
+                // AI as a tool result rather than letting it crash the whole session.
+                return $"Error: could not write '{fileName}' ({ex.Message}).";
+            }
 
             return $"Success: The file '{fileName}' was successfully created and written";
         }
