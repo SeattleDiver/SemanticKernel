@@ -21,7 +21,7 @@ namespace Conversationalist
             // Step 2: Add a chat completion service to the builder
             // Fetch the API Key from the environment variable and add the service to the builder
             string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
-            string modelId = "gemini-2.5-flash-lite";
+            string modelId = "gemini-2.5-flash";
 
             builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
 
