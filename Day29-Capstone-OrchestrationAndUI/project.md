@@ -59,14 +59,39 @@ default, inconsistent with every sibling string property in the same class (all 
 default to `string.Empty`) and at odds with the project's `<Nullable>enable</Nullable>`
 setting. Given a default of `string.Empty` to match.
 
+**Fixed during the OpenAI migration pass**, matching fixes already applied to this same
+codebase in Days 27-28 that this Day 29 copy had drifted from:
+
+- `GoalRefinerAgent`, `PlannerAgent`, and `DeveloperAgent`'s `InvokePromptAsync` calls had no
+  try/catch at all in this file (unlike their Day 27/28 counterparts). A transient network
+  error, rate limit, or content filter on any of them would crash the whole orchestration
+  loop mid-cycle. Each now wraps its call in a try/catch with the same degrade-gracefully
+  behavior established in the earlier capstone days.
+- `DeveloperAgent._baseKernel` was declared `public readonly`, letting external callers reach
+  in and grab the kernel directly instead of going through the `IProjectAgent` contract -
+  the same encapsulation bug already fixed in Days 27/28's copy of this file. Changed to
+  `private readonly` to match its siblings.
+- `ReviewerAgent.ExecuteAsync`'s `InvokePromptAsync` call was the one agent call the guard
+  pass above missed - a failure there would still crash the whole session even after the
+  other three agents were hardened. Wrapped per-task in a try/catch that logs and moves on
+  to the next task, leaving a failed review's completion status untouched so it's simply
+  reviewed again next cycle.
+
 The docx's "Complete Code" listing, the Step 5 walkthrough prose, and the "Expected Output"
 section (which had previously reproduced the buggy console line verbatim, with a note
 explaining it was a known bug) were all updated to match the fixed code.
 
 Deliberately left as enhancement opportunities, not defects, per `missing.md`: no
-`CancellationToken`/timeout support, no retry/resilience wrapping around the bare
-`InvokePromptAsync` calls, no persistence of `ProjectState` across runs, no unit tests for the
-orchestrator's convergence logic, and the latent (but cycle-bounded) risk of the Planner
-re-adding tasks every cycle instead of planning once. Minor cosmetic typos in prompt/log
-strings (e.g. "techincal", "Deos", "a string QA Reviewer") were also left alone since they
-don't affect functionality or block the tutorial.
+`CancellationToken`/timeout support, no persistence of `ProjectState` across runs, no unit
+tests for the orchestrator's convergence logic, and the latent (but cycle-bounded) risk of the
+Planner re-adding tasks every cycle instead of planning once. Minor cosmetic typos in
+prompt/log strings (e.g. "techincal", "Deos", "a string QA Reviewer") were also left alone
+since they don't affect functionality or block the tutorial.
+
+**Also noted during the OpenAI migration's adversarial review, left as-is for the same
+cycle-bounded reason as the Planner risk above:** `ReviewerAgent` re-submits *every*
+completed task to the model on *every* cycle, not just newly-completed ones - so a task
+already approved in an earlier cycle gets reviewed again, and a nondeterministic model
+judgment could in principle flip an approved task back to rejected with no code change.
+Bounded by the same 5-cycle cap, and distinguishing "new" from "already-approved" tasks
+would need a new field on `ProjectTask` - a design change beyond this pass's scope.

@@ -1,25 +1,28 @@
 ﻿// ------------------------------------------------------------------------------------------------
-// Day 28: Capstone Implementation(Plugins & Single Agents)
+// Day 29: Capstone Implementation (Orchestration & UI)
 // Project Overview
-// In Day 28, we implement the "Muscle" of the Universal Project Manager (UPM). Continuing in the
-// single Capstone solution we started on Day 27, we will add two concrete agents implementing our
-// IProjectAgent interface: the Planner Agent and the Developer Agent.
+// In Day 29, we replace Day 28's fixed, hand-written agent sequence with a real orchestrator.
+// A new ProjectOrchestrator loops the GoalRefiner, Planner, Developer, and a new ReviewerAgent
+// until every task is completed and approved, or a safety cap of cycles is reached.
 // ------------------------------------------------------------------------------------------------
 
 using Microsoft.SemanticKernel;
 
 namespace UniversalProjectManager
 {
+    /// <summary>Entry point that builds the agent list and hands control to a ProjectOrchestrator for the whole workflow.</summary>
     internal class Program
     {
+        /// <summary>Prompts for a project idea, then runs the full Refiner/Planner/Developer/Reviewer cycle via the orchestrator.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // Initialize the Kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel baseKernel = builder.Build();
 
             Console.WriteLine("Universal Project Manager (UPM) - Phase 3 Orchestration");
