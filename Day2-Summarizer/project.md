@@ -3,7 +3,7 @@
 ## What this project builds
 
 A small console app that generates a demo article about quantum computing
-into `article.txt`, reads it back in, and hands the text to Gemini through a
+into `article.txt`, reads it back in, and hands the text to OpenAI through a
 prompt template that asks for exactly three bullet points. Where Day 1 was an
 open-ended chatbot, Day 2 turns the model into a single-purpose "Reduction
 Agent": one input file in, one deterministic summary out, no conversation

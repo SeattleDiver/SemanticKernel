@@ -8,16 +8,19 @@ using Microsoft.SemanticKernel;
 
 namespace Summarizer
 {
+    /// <summary>Entry point that reduces a text file to a 3-bullet summary using a one-shot prompt template.</summary>
     public class Program
     {
+        /// <summary>Generates a demo article, then asks the model to summarize it into exactly 3 bullet points.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // Step1: Initialize the Kernel
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new Exception("GEMINI_API_KEY environment variable not set.");
-            string modelId = "gemini-2.5-flash";
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new Exception("OPENAI_API_KEY environment variable not set.");
+            string modelId = "gpt-4.1-mini";
 
-            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
             Kernel kernel = builder.Build();
 
             // Step 2. Create text file for demonstration
@@ -66,7 +69,8 @@ namespace Summarizer
             }
         }
 
-        // Helper method to generate a long text file for our demo
+        /// <summary>Writes a fixed demo article about quantum computing to <paramref name="path"/> for the lesson to summarize.</summary>
+        /// <param name="path">File path to write the demo article to.</param>
         static void CreateDummyArticle(string path)
         {
             string content = @"
