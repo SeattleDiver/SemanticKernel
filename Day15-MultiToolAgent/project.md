@@ -38,7 +38,7 @@ for them here.
 - **Tool selection vs. tool execution** — the deliberately compound sample
   question forces the model to plan across two tools in a single turn, which
   is a materially harder task than invoking the one tool available.
-- **`GeminiToolCallBehavior.AutoInvokeKernelFunctions`** — the single setting
+- **`ToolCallBehavior.AutoInvokeKernelFunctions`** — the single setting
   that makes the whole exchange "agentic": Semantic Kernel detects the
   model's function-call requests, invokes the matching C# methods, feeds the
   results back to the model, and returns only the final synthesized answer.

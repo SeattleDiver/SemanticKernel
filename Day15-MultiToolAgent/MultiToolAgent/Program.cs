@@ -9,13 +9,16 @@ using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace MultiToolAgent
 {
     // 1. Define multiple plugins
+    /// <summary>Native plugin exposing the current local time as a Semantic Kernel tool.</summary>
     public class TimePlugin
     {
+        /// <summary>Gets the current local time.</summary>
+        /// <returns>The current local date and time, formatted as a full date/time string.</returns>
         [KernelFunction("GetLocalTime")]
         [Description("Gets the current local time.")]
         public string GetTime()
@@ -25,8 +28,12 @@ namespace MultiToolAgent
         }
     }
 
+    /// <summary>Native plugin exposing a (simulated) current-weather lookup as a Semantic Kernel tool.</summary>
     public class WeatherPlugin
     {
+        /// <summary>Gets the current weather for a specific city.</summary>
+        /// <param name="city">The city name to look up weather for.</param>
+        /// <returns>A short weather description for the requested city.</returns>
         [KernelFunction("GetWeather")]
         [Description("Gets the current weather for a specific city.")]
         public string GetWeather([Description("The city name")] string city)
@@ -36,16 +43,19 @@ namespace MultiToolAgent
         }
     }
 
+    /// <summary>Entry point that registers two independent plugins and lets the model decide which one(s) a request needs.</summary>
     class Program
     {
+        /// <summary>Asks a compound question requiring both plugins in one turn and prints the agent's synthesized answer.</summary>
+        /// <param name="strings">Unused command-line arguments.</param>
         static async Task Main(string[] strings)
         {
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY was not found");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY was not found");
 
-            // 2. Setup Gemini
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            // 2. Setup OpenAI
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
 
             // 3. Register the plugins
             builder.Plugins.AddFromType<TimePlugin>("Time");
@@ -55,16 +65,16 @@ namespace MultiToolAgent
 
             // 4. Set the ToolCallBehavior to AutoInvokeKernelFunctions
             // This is what makes it "Agentic" - the Kernel handles the tool-loop
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
-                ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
+                ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
             };
 
             string userRequest = "What time is it, and should I bring an umbrella in Salt Lake City today?";
             Console.WriteLine($"User Request: {userRequest}");
             Console.WriteLine("--- AGENT REASONING AND TOOL USER ---");
 
-            // 5. Guard the model call - Gemini's API call and the auto-invoked
+            // 5. Guard the model call - OpenAI's API call and the auto-invoked
             // tool round trips behind it are the riskiest part of this program;
             // without a catch here, a network hiccup or API error would crash
             // the whole console app instead of just failing this one request.
