@@ -31,7 +31,30 @@ namespace MarketNegotiation
             }
 
             decimal scale = totalBudget / total;
-            return bids.ToDictionary(kv => kv.Key, kv => Math.Round(kv.Value.RequestedAmount * scale, 2));
+
+            // Rounding each share to 2 decimal places independently ("coin rounding") can drift
+            // the sum a cent or two away from totalBudget. Every share but the last is rounded
+            // normally; the last bidder gets whatever remains, so the total always lands exactly
+            // on budget instead of just approximately.
+            var keys = bids.Keys.ToList();
+            var allocation = new Dictionary<string, decimal>();
+            decimal allocatedSoFar = 0m;
+
+            for (int i = 0; i < keys.Count; i++)
+            {
+                if (i == keys.Count - 1)
+                {
+                    allocation[keys[i]] = totalBudget - allocatedSoFar;
+                }
+                else
+                {
+                    decimal share = Math.Round(bids[keys[i]].RequestedAmount * scale, 2);
+                    allocation[keys[i]] = share;
+                    allocatedSoFar += share;
+                }
+            }
+
+            return allocation;
         }
     }
 }

@@ -28,14 +28,14 @@ concrete allocation of money that must add up.
 ## Setup
 
 - .NET 10 SDK
-- A Gemini API key, available via the `GEMINI_API_KEY` environment variable
+- An OpenAI API key, available via the `OPENAI_API_KEY` environment variable
 - NuGet packages:
   - `Microsoft.SemanticKernel` `1.78.0`
-  - `Microsoft.SemanticKernel.Connectors.Google` `1.79.0-alpha`
+  - `Microsoft.SemanticKernel.Connectors.OpenAI` `1.78.0`
 
 ```
 dotnet add package Microsoft.SemanticKernel --version 1.78.0
-dotnet add package Microsoft.SemanticKernel.Connectors.Google --version 1.79.0-alpha
+dotnet add package Microsoft.SemanticKernel.Connectors.OpenAI --version 1.78.0
 ```
 
 ## Core Concepts
@@ -107,7 +107,7 @@ namespace MarketNegotiation
 ```csharp
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace MarketNegotiation
 {
@@ -141,11 +141,10 @@ namespace MarketNegotiation
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.5,
-                ResponseMimeType = "application/json",
-                ResponseSchema = typeof(Bid)
+                ResponseFormat = typeof(Bid)
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
@@ -192,7 +191,30 @@ namespace MarketNegotiation
             }
 
             decimal scale = totalBudget / total;
-            return bids.ToDictionary(kv => kv.Key, kv => Math.Round(kv.Value.RequestedAmount * scale, 2));
+
+            // Rounding each share to 2 decimal places independently ("coin rounding") can drift
+            // the sum a cent or two away from totalBudget. Every share but the last is rounded
+            // normally; the last bidder gets whatever remains, so the total always lands exactly
+            // on budget instead of just approximately.
+            var keys = bids.Keys.ToList();
+            var allocation = new Dictionary<string, decimal>();
+            decimal allocatedSoFar = 0m;
+
+            for (int i = 0; i < keys.Count; i++)
+            {
+                if (i == keys.Count - 1)
+                {
+                    allocation[keys[i]] = totalBudget - allocatedSoFar;
+                }
+                else
+                {
+                    decimal share = Math.Round(bids[keys[i]].RequestedAmount * scale, 2);
+                    allocation[keys[i]] = share;
+                    allocatedSoFar += share;
+                }
+            }
+
+            return allocation;
         }
     }
 }
@@ -213,11 +235,11 @@ namespace MarketNegotiation
 
         static async Task Main(string[] args)
         {
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
 
             var builder = Kernel.CreateBuilder();
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();

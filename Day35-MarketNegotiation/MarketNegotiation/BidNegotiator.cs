@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace MarketNegotiation
 {
@@ -41,11 +41,10 @@ namespace MarketNegotiation
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.5,
-                ResponseMimeType = "application/json",
-                ResponseSchema = typeof(Bid)
+                ResponseFormat = typeof(Bid)
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
