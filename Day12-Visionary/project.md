@@ -3,7 +3,7 @@
 ## What this project builds
 
 A single-shot console program that sends a bundled sample chart image
-(`Assets/sample-chart.png`) to Gemini 2.5 Flash alongside a text instruction,
+(`Assets/sample-chart.png`) to OpenAI's gpt-4.1-mini alongside a text instruction,
 and prints the model's description of the chart's type, key data points, and
 overall trend. There's no conversation loop — one multimodal request goes
 out, one answer comes back, and the program exits.
@@ -26,7 +26,7 @@ more advanced lessons build on.
   turn instead of two.
 - **Provider-agnostic content abstractions**: `TextContent` and `ImageContent`
   are plain Semantic Kernel types; only the connector registration
-  (`AddGoogleAIGeminiChatCompletion`) is Gemini-specific.
+  (`AddOpenAIChatCompletion`) is provider-specific.
 - **Loading a build-time asset reliably at runtime**: using
   `AppContext.BaseDirectory` combined with the `.csproj`'s
   `CopyToOutputDirectory` setting so the image is found next to the compiled

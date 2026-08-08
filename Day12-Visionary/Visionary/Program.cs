@@ -3,27 +3,30 @@
 // Multimodal input: builds a ChatMessageContentItemCollection combining a
 // text instruction with image bytes (TextContent + ImageContent) so the
 // model can analyze a chart image instead of just reading text. These
-// content types are plain Semantic Kernel abstractions, not Gemini-specific -
+// content types are plain Semantic Kernel abstractions, not provider-specific -
 // only the connector registration below is provider-specific.
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace Visionary
 {
+    /// <summary>Entry point that sends a bundled chart image plus a text instruction to a multimodal model in one turn.</summary>
     class Program
     {
+        /// <summary>Loads the sample chart image, sends it alongside an analysis instruction, and prints the model's description.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
-            // 1. Initialize the Kernel 
+            // 1. Initialize the Kernel
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -63,7 +66,7 @@ namespace Visionary
 
             // 4. Invoke the model
             // Multimodal tasks often benefit from a slightly higher temperature to encourage creative descriptions
-            var settings = new GeminiPromptExecutionSettings { Temperature = 0.4 };
+            var settings = new OpenAIPromptExecutionSettings { Temperature = 0.4 };
 
             // Step 4b: Not every model/region accepts image content the same way, so a
             // rejected or unsupported request should surface as a clear message rather
