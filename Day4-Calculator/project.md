@@ -2,12 +2,12 @@
 
 ## What this project builds
 
-A small console app ("Math Agent") that gives Gemini a native C# calculator
+A small console app ("Math Agent") that gives OpenAI a native C# calculator
 to call instead of trying to do arithmetic itself. `MathPlugin.cs` exposes
 four ordinary C# methods (`Add`, `Subtract`, `Multiply`, `Divide`) as
 Semantic Kernel tools via the `[KernelFunction]` attribute, and
 `Program.cs` wires that plugin into a `Kernel`, enables
-`GeminiToolCallBehavior.AutoInvokeKernelFunctions`, and asks the model to
+`ToolCallBehavior.AutoInvokeKernelFunctions`, and asks the model to
 solve a multi-step apple word problem "using your tools." Running it prints
 each native function call as it happens (`[NATIVE CODE EXECUTION] ...`),
 followed by the model's final natural-language answer built from the exact
@@ -37,7 +37,7 @@ back-and-forth automatically.
 - **`AddFromType<T>`** — registers a plugin class under a namespace
   (`"Math"`), making its functions addressable as `Math.Add`,
   `Math.Divide`, etc.
-- **Auto tool-invocation** — `GeminiToolCallBehavior.AutoInvokeKernelFunctions`
+- **Auto tool-invocation** — `ToolCallBehavior.AutoInvokeKernelFunctions`
   is what actually grants permission to execute a tool automatically;
   registering the plugin alone only makes the model aware it exists.
 - **The reasoning loop** — `InvokePromptAsync` hides several silent

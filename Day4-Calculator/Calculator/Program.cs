@@ -5,23 +5,26 @@
 // native plugin (see MathPlugIn.cs) and enabling auto tool-invocation, so the
 // model can pause generation, call our code for the exact answer, and resume.
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System.ComponentModel;
 
 namespace Calculator
 {
 
+    /// <summary>Entry point that wires a native math plugin into the kernel and lets the model call it to solve a word problem.</summary>
     public class Program
     {
+        /// <summary>Registers the math plugin, enables auto tool-invocation, and asks the model to solve a multi-step word problem using it.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // Step 2: Init the kernel
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY environment variable not set");
-            string modelId = "gemini-2.5-flash";
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY environment variable not set");
+            string modelId = "gpt-4.1-mini";
 
-            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
 
             // Step 3: Load the native plug in
             builder.Plugins.AddFromType<MathPlugin>("Math");
@@ -35,9 +38,9 @@ namespace Calculator
             // model would know the Math plugin exists but wouldn't have
             // permission to call it - it would just try (and fail) to guess
             // the arithmetic itself.
-            var executionSettings = new GeminiPromptExecutionSettings
+            var executionSettings = new OpenAIPromptExecutionSettings
             {
-                ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
+                ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
             };
 
             var arguments = new KernelArguments(executionSettings);
