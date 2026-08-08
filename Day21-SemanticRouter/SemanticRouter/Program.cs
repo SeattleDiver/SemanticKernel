@@ -11,16 +11,19 @@ using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace SemanticRouter
 {
+    /// <summary>Entry point that classifies user intent up front and dispatches to a domain-isolated specialist agent.</summary>
     internal class Program
     {
+        /// <summary>Loops on user input, routing each request to TechSupportAgent, BillingAgent, or a direct general-purpose call.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // 1. Init the base kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel baseKernel = builder.Build();
 
             // 2. Init our clean, decoupled components

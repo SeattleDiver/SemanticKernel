@@ -4,7 +4,7 @@
 
 An interactive console app that reads free-text user requests, classifies
 each one's intent (`TECH`, `BILLING`, or `GENERAL`) with a dedicated "router"
-call to Gemini forced to return strict JSON, and then dispatches the request
+call to OpenAI forced to return strict JSON, and then dispatches the request
 to one of two specialist agents. Each specialist runs on its own cloned
 `Kernel` that has only its own tool registered — `TechSupportAgent` can call
 `ResetPassword`, `BillingAgent` can call `GetBalance`, and neither can reach
@@ -23,13 +23,14 @@ multi-agent lessons build on.
 ## Core concepts taught
 
 - **Intent classification via structured JSON** — `SemanticRouter.RouteAsync`
-  sets `GeminiPromptExecutionSettings.ResponseMimeType = "application/json"`
+  sets `OpenAIPromptExecutionSettings.ResponseFormat = "json_object"`
   and `Temperature = 0.0` so the router's output is deterministic and
   machine-parseable instead of free-form text you'd have to pattern-match.
 - **Chain-of-thought-first prompting** — the JSON schema asks for
-  `"reasoning"` before `"intent"`. Because Gemini emits JSON keys in the order
-  requested, this forces a justification before the model commits to a
-  category, which measurably improves classification accuracy for free.
+  `"reasoning"` before `"intent"`. Models tend to emit JSON keys in the order
+  shown in the prompt's schema, so this forces a justification before the
+  model commits to a category, which measurably improves classification
+  accuracy for free.
 - **Kernel isolation via `Kernel.Clone()`** — `TechSupportAgent` and
   `BillingAgent` each clone the shared `baseKernel`, which keeps the same AI
   service registrations but starts with an empty plugin collection. Each
@@ -51,9 +52,9 @@ Two small, high-impact fixes were applied to `SemanticRouter/`:
 
 1. **Unhandled `JsonException` on malformed router output** —
    `SemanticRouter.RouteAsync` fed the router's raw response straight into
-   `JsonSerializer.Deserialize<RouteDecision>` with no try/catch. If Gemini
+   `JsonSerializer.Deserialize<RouteDecision>` with no try/catch. If the model
    ever returned truncated or otherwise invalid JSON despite the strict
-   `ResponseMimeType` setting, the exception would propagate uncaught and
+   `ResponseFormat` setting, the exception would propagate uncaught and
    crash the whole console loop mid-session. Wrapped the deserialization in
    a try/catch that falls back to `RouteDecision { Intent = "GENERAL" }`,
    matching the defensive fallback the code already used for a null result.
@@ -65,7 +66,7 @@ Two small, high-impact fixes were applied to `SemanticRouter/`:
    `[Description("The account ID")]`.
 
 Everything else flagged in `missing.md` — retry/timeout policies around the
-three Gemini calls, per-specialist `ChatHistory` for multi-turn memory, a
+three OpenAI calls, per-specialist `ChatHistory` for multi-turn memory, a
 mechanism to recover from router misclassification, real persistence/
 validation behind the mock tools, and durable logging of routing decisions —
 is legitimate production-hardening but was deliberately left alone as an
