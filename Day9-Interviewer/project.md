@@ -28,7 +28,7 @@ that treats prompt design itself as the core skill being taught.
   and five numbered behavioral rules the model is expected to follow
   for the rest of the conversation without those rules being repeated.
 - **Consistent execution settings across a whole conversation** — a
-  single `GeminiPromptExecutionSettings` (`Temperature = 0.7`) instance
+  single `OpenAIPromptExecutionSettings` (`Temperature = 0.7`) instance
   is created once and reused on every call, keeping the interviewer's
   tone stable turn after turn.
 - **Seeding a conversation with a scripted kickoff message** —
@@ -50,8 +50,8 @@ gracefully:
 
 - Wrapped both `GetChatMessageContentAsync` calls (the priming call
   before the loop, and the call inside the interview loop) in
-  try/catch. A transient network error, rate limit, or safety-filter
-  rejection from Gemini previously threw an unhandled exception and
+  try/catch. A transient network error, rate limit, or content-filter
+  rejection from OpenAI previously threw an unhandled exception and
   killed the whole session; now the priming call prints a message and
   exits cleanly, and the in-loop call prints a message, keeps the
   accumulated `ChatHistory` intact, and lets the candidate try their

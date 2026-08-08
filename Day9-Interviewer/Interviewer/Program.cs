@@ -8,23 +8,26 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace Interviewer
 {
+    /// <summary>Entry point that runs a persona-constrained, multi-turn mock technical interview loop.</summary>
     class Program
     {
+        /// <summary>Primes the interviewer persona, then loops on candidate answers until the candidate types "exit".</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
-            // 1. Initialize the Kernel with Gemini 2.5 flash
+            // 1. Initialize the Kernel with an OpenAI chat model
             var builder = Kernel.CreateBuilder();
 
-            string apikey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ??
-                throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+            string apikey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ??
+                throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
 
-            builder.AddGoogleAIGeminiChatCompletion(
+            builder.AddOpenAIChatCompletion(
                 apiKey: apikey,
-                modelId: "gemini-2.5-flash");
+                modelId: "gpt-4.1-mini");
 
             Kernel kernel = builder.Build();
 
@@ -33,13 +36,13 @@ namespace Interviewer
 
             // 3. Define the System Persona with clear constraints
             var chatHistory = new ChatHistory(
-                "You are a senior .NET architect conducting a techincal interview for a c# developer position." +
+                "You are a senior .NET architect conducting a technical interview for a c# developer position. " +
                 "Your goal is to assess the candidate's understanding of Agentic AI and Semantic Kernel. " +
-                "Rules" +
-                "1. Ask only ONE question at a time" +
-                "2. If the user's answer is vague, ask a follow-up qeustion to probe deeper." +
+                "Rules: " +
+                "1. Ask only ONE question at a time. " +
+                "2. If the user's answer is vague, ask a follow-up question to probe deeper. " +
                 "3. If the answer is correct, acknowledge it briefly and move to a more difficult topic. " +
-                "4. Stay professional and stay in character. " + 
+                "4. Stay professional and stay in character. " +
                 "5. Start by introducing yourself and asking the first question."
             );
             chatHistory.AddUserMessage("I am here for the .NET Architect interview. I'm ready to begin.");
@@ -47,7 +50,7 @@ namespace Interviewer
             Console.WriteLine("--- Interview Mode started ---");
 
             // Consistent execution settings for every model call in this conversation
-            var executionSettings = new GeminiPromptExecutionSettings
+            var executionSettings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.7,
             };
@@ -80,7 +83,7 @@ namespace Interviewer
                 string? candidateAnswer = Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(candidateAnswer)) continue;
-                if (candidateAnswer .Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
+                if (candidateAnswer.Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
 
                 // Add the user's answer to the context
                 chatHistory.AddUserMessage(candidateAnswer);
@@ -94,15 +97,18 @@ namespace Interviewer
                 catch (Exception ex)
                 {
                     // Step: A transient API failure shouldn't end the interview -
-                    // keep chatHistory intact and let the candidate retry.
+                    // roll back the candidate's unanswered turn so history stays a
+                    // clean back-and-forth and the candidate can genuinely retry.
+                    chatHistory.RemoveAt(chatHistory.Count - 1);
                     Console.WriteLine($"\nThe interviewer is momentarily unavailable ({ex.Message}). Please try again.");
                     continue;
                 }
-                Console.WriteLine($"\nInterviewer: {nextQuestion.Content}");
 
-                // Add the interviewer's response to the history
+                // Guard against a null/empty response the same way the priming call above does,
+                // since AddAssistantMessage requires a non-null string.
                 if (nextQuestion.Content != null)
                 {
+                    Console.WriteLine($"\nInterviewer: {nextQuestion.Content}");
                     chatHistory.AddAssistantMessage(nextQuestion.Content);
                 }
             }
