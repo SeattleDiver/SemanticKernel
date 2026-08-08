@@ -10,8 +10,11 @@ using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace Conversationalist
 {
+    /// <summary>Entry point hosting a continuous, terminal-based chatbot backed by Semantic Kernel and OpenAI.</summary>
     internal class Program
     {
+        /// <summary>Builds the kernel, then runs the read-eval-print chat loop until the user types "exit".</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // Step 1: Setup a kernel builder - the factory used to configure
@@ -42,6 +45,13 @@ namespace Conversationalist
             {
                 Console.Write("\nUser: ");
                 string? userInput = Console.ReadLine();
+
+                // A null read means stdin hit EOF (e.g. piped input) - there will never be
+                // another line, so looping on "continue" here would spin forever.
+                if (userInput is null)
+                {
+                    break;
+                }
 
                 if (string.IsNullOrWhiteSpace(userInput))
                 {
