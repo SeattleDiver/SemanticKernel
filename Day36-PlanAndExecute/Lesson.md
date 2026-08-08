@@ -19,20 +19,20 @@ not just a retry.
   task-level rework. This lesson's loop discards the whole plan and asks
   the Planner to rethink the approach - plan-level rework. Both are valid
   closed loops; they operate at different granularities.
-- **Day 7, Day 31-35** - structured JSON output via `ResponseSchema`, and
+- **Day 7, Day 31-35** - structured JSON output via `ResponseFormat`, and
   defensive parsing with a safe fallback. Reused here for the plan itself.
 
 ## Setup
 
 - .NET 10 SDK
-- A Gemini API key, available via the `GEMINI_API_KEY` environment variable
+- An OpenAI API key, available via the `OPENAI_API_KEY` environment variable
 - NuGet packages:
   - `Microsoft.SemanticKernel` `1.78.0`
-  - `Microsoft.SemanticKernel.Connectors.Google` `1.79.0-alpha`
+  - `Microsoft.SemanticKernel.Connectors.OpenAI` `1.78.0`
 
 ```
 dotnet add package Microsoft.SemanticKernel --version 1.78.0
-dotnet add package Microsoft.SemanticKernel.Connectors.Google --version 1.79.0-alpha
+dotnet add package Microsoft.SemanticKernel.Connectors.OpenAI --version 1.78.0
 ```
 
 ## Core Concepts
@@ -145,7 +145,7 @@ namespace PlanAndExecute
 ```csharp
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace PlanAndExecute
 {
@@ -188,11 +188,10 @@ namespace PlanAndExecute
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.3,
-                ResponseMimeType = "application/json",
-                ResponseSchema = typeof(ExecutionPlan)
+                ResponseFormat = typeof(ExecutionPlan)
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
@@ -230,11 +229,11 @@ namespace PlanAndExecute
 
         static async Task Main(string[] args)
         {
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
 
             var builder = Kernel.CreateBuilder();
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -300,7 +299,9 @@ this closed-loop *planning* and not a scripted patch.
 
 ## Expected Result
 
-A real run produced this exact transcript:
+A real run produced this exact transcript (captured before this lesson's
+migration from Gemini to OpenAI - re-running it today will produce
+different exact wording, but the shape described below is what to expect):
 
 ```
 GOAL: Migrate the orders database to the new schema with zero downtime.

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace PlanAndExecute
 {
@@ -12,6 +12,9 @@ namespace PlanAndExecute
     {
         private readonly IChatCompletionService _chatService;
 
+        /// <summary>
+        /// Creates a planner backed by the given chat completion service.
+        /// </summary>
         public Planner(IChatCompletionService chatService)
         {
             _chatService = chatService;
@@ -52,11 +55,10 @@ namespace PlanAndExecute
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.3,
-                ResponseMimeType = "application/json",
-                ResponseSchema = typeof(ExecutionPlan)
+                ResponseFormat = typeof(ExecutionPlan)
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
