@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 
-namespace Day6FileManager
+namespace FileManager
 {
     // Step 1: Define the File System Plugin
     /// <summary>Native C# plugin that lets the model list, read, and write files, sandboxed to the app's current directory.</summary>

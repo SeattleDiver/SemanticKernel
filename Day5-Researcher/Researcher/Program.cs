@@ -27,7 +27,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.SemanticKernel;
 
-namespace Day5Researcher
+namespace Researcher
 {
     /// <summary>Entry point that answers a real-time question using OpenAI's search-preview model instead of the standard chat model.</summary>
     class Program
