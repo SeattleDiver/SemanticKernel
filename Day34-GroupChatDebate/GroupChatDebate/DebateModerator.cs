@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace GroupChatDebate
 {
@@ -64,10 +64,10 @@ namespace GroupChatDebate
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.3,
-                ResponseMimeType = "application/json"
+                ResponseFormat = "json_object"
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
@@ -108,7 +108,7 @@ namespace GroupChatDebate
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings { Temperature = 0.3 };
+            var settings = new OpenAIPromptExecutionSettings { Temperature = 0.3 };
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
             return response.Content ?? "(no summary produced)";
         }

@@ -1,5 +1,5 @@
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace GroupChatDebate
 {
@@ -28,7 +28,7 @@ namespace GroupChatDebate
 
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings { Temperature = 0.7 };
+            var settings = new OpenAIPromptExecutionSettings { Temperature = 0.7 };
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
             return response.Content ?? string.Empty;
         }

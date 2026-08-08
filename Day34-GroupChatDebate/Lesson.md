@@ -12,17 +12,22 @@ participants monopolize the floor.
 **A note on how this lesson is built.** Semantic Kernel ships a native
 `GroupChatOrchestration` API for exactly this pattern
 (`Microsoft.SemanticKernel.Agents.Orchestration`, still experimental/preview).
-It was tried first here and reproducibly failed live: agents returned empty
-responses on most turns, using both a custom `GroupChatManager` and
-Microsoft's own built-in `RoundRobinGroupChatManager` - ruling out this
-lesson's code as the cause. A search turned up a matching, open report
-([GitHub Discussion #13553](https://github.com/microsoft/semantic-kernel/discussions/13553))
-describing the same failure "more than 50% of the time." Per this series'
-own rule for exactly this situation, the lesson below hand-rolls the pattern
-with plain `Kernel`/`IChatCompletionService` calls instead of shipping a
-flaky lesson on the experimental API. The mechanics you'll learn -
-moderator-driven selection, anti-repetition, forced rotation - are identical
-either way; only the plumbing underneath differs.
+It was tried first here and reproducibly failed live against **Gemini**:
+agents returned empty responses on most turns, using both a custom
+`GroupChatManager` and Microsoft's own built-in `RoundRobinGroupChatManager`
+- ruling out this lesson's code as the cause. A search turned up a matching,
+open report ([GitHub Discussion #13553](https://github.com/microsoft/semantic-kernel/discussions/13553))
+describing the same failure "more than 50% of the time" - also reported
+against a Gemini connector (Vertex AI), with no confirmation either way for
+OpenAI. The series has since moved to OpenAI, and this specific failure
+hasn't been re-tested against `GroupChatOrchestration` there; it may or may
+not reproduce. The hand-rolled version below is kept regardless: it already
+works, it depends on nothing but plain `Kernel`/`IChatCompletionService`
+calls, and re-attempting the experimental orchestration path under a new
+provider would be a fresh verification effort, not a straight provider
+swap. The mechanics you'll learn - moderator-driven selection,
+anti-repetition, forced rotation - are identical either way; only the
+plumbing underneath differs.
 
 ## Prerequisites
 
@@ -35,29 +40,29 @@ either way; only the plumbing underneath differs.
   routing decision), applied to picking a speaker instead of picking a
   specialist agent.
 - **Day 7, Day 26, Day 31-33** - structured JSON output via
-  `ResponseMimeType`, defensive deserialization, and per-item error
+  `ResponseFormat`, defensive deserialization, and per-item error
   fallbacks. All reused here in the moderator's speaker-selection call.
 
 ## Setup
 
 - .NET 10 SDK
-- A Gemini API key, available via the `GEMINI_API_KEY` environment variable
+- An OpenAI API key, available via the `OPENAI_API_KEY` environment variable
 - NuGet packages - deliberately just the two already used throughout the
   series, since this lesson hand-rolls the pattern rather than pulling in
   SK's experimental orchestration packages:
   - `Microsoft.SemanticKernel` `1.78.0`
-  - `Microsoft.SemanticKernel.Connectors.Google` `1.79.0-alpha`
+  - `Microsoft.SemanticKernel.Connectors.OpenAI` `1.78.0`
 
 ```
 dotnet add package Microsoft.SemanticKernel --version 1.78.0
-dotnet add package Microsoft.SemanticKernel.Connectors.Google --version 1.79.0-alpha
+dotnet add package Microsoft.SemanticKernel.Connectors.OpenAI --version 1.78.0
 ```
 
 ## Core Concepts
 
 **A moderator is just another structured-output LLM call.** There's no
 special "moderator" primitive in Semantic Kernel. `DebateModerator` is a
-plain class making the same kind of `ResponseMimeType = "application/json"`
+plain class making the same kind of `ResponseFormat = "json_object"`
 call every other lesson in this series makes - the only thing that makes it
 a "moderator" is what it's asked to decide: who talks next, and eventually,
 how the whole thing wrapped up.
@@ -137,7 +142,7 @@ Selects the next speaker and, once the debate ends, summarizes it:
 ```csharp
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace GroupChatDebate
 {
@@ -194,10 +199,10 @@ namespace GroupChatDebate
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.3,
-                ResponseMimeType = "application/json"
+                ResponseFormat = "json_object"
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
@@ -235,7 +240,7 @@ namespace GroupChatDebate
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings { Temperature = 0.3 };
+            var settings = new OpenAIPromptExecutionSettings { Temperature = 0.3 };
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
             return response.Content ?? "(no summary produced)";
         }
@@ -251,7 +256,7 @@ text - not a long-lived per-agent thread:
 
 ```csharp
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace GroupChatDebate
 {
@@ -274,7 +279,7 @@ namespace GroupChatDebate
 
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings { Temperature = 0.7 };
+            var settings = new OpenAIPromptExecutionSettings { Temperature = 0.7 };
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
             return response.Content ?? string.Empty;
         }
@@ -300,11 +305,11 @@ namespace GroupChatDebate
 
         static async Task Main(string[] args)
         {
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
 
             var builder = Kernel.CreateBuilder();
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -397,9 +402,12 @@ lose it, eventually, every time it matters.
 `DebateSpeaker.RespondAsync` never keeps a long-lived conversation thread
 per participant - every call builds a brand-new `ChatHistory` from that
 participant's instructions plus the transcript as plain text. This was the
-direct fix for the empty-response bug found in the experimental
-`GroupChatOrchestration` path: a fresh, fully-specified prompt every turn
-has no ambiguous "continue" state for the model to return nothing for.
+direct fix for the empty-response bug found (against Gemini) in the
+experimental `GroupChatOrchestration` path: a fresh, fully-specified prompt
+every turn has no ambiguous "continue" state for the model to return
+nothing for. Whether or not that specific bug reproduces under OpenAI, a
+fresh prompt per turn is still the simpler, more predictable design - so
+it's kept either way.
 
 ## Expected Result
 
