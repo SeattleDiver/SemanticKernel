@@ -6,19 +6,22 @@
 // SlowWeatherPlugin's artificial delay makes the tool-execution span clearly
 // distinct from the surrounding LLM-call spans in the console output. This
 // is provider-agnostic by construction - OTel listens to SK's own
-// instrumentation, not to Gemini specifically, so the tracing keeps working
-// identically no matter which connector is registered below.
+// instrumentation, not to any specific provider, so the tracing keeps
+// working identically no matter which connector is registered below.
 using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 
 namespace Telemetry
 {
+    /// <summary>Entry point that wires OpenTelemetry into Semantic Kernel's diagnostic instrumentation and traces one request.</summary>
     class Program
     {
+        /// <summary>Configures an OTel console tracer, then runs a tool-calling prompt so its spans (LLM/plugin/LLM) are traced.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // 1. Configure OpenTelemetry Tracing
@@ -37,10 +40,10 @@ namespace Telemetry
             // 2. Initialize the Kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
 
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
 
             // Register our mock plugin
             builder.Plugins.AddFromType<SlowWeatherPlugin>();
@@ -50,11 +53,11 @@ namespace Telemetry
             Console.WriteLine("Starting observability session...\n");
 
             // 3. Execute a request that requires tool usage
-            // Be enabling AutoInvoke, Semantic Kernel will automatically handle the tool loop.
+            // By enabling AutoInvoke, Semantic Kernel will automatically handle the tool loop.
             // This generates multiple telemetry spans: one for the initial LLM call,
             // one for the plugin execution, and one for the final LLM summary.
-            GeminiPromptExecutionSettings settings = new GeminiPromptExecutionSettings();
-            settings.ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions;
+            OpenAIPromptExecutionSettings settings = new OpenAIPromptExecutionSettings();
+            settings.ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions;
 
             KernelArguments arguments = new KernelArguments(settings);
             string prompt = "What is the weather like in Seattle right now?";

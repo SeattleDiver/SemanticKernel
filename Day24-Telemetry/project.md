@@ -38,7 +38,7 @@ execution, and the follow-up LLM call) with no manual bookkeeping.
   work (an LLM call or a plugin execution) with a measurable `Duration`,
   showing exactly where time goes in an agentic request.
 - **Provider-agnostic instrumentation**: because OTel listens to SK's own
-  instrumentation rather than anything Gemini-specific, the same tracing
+  instrumentation rather than anything provider-specific, the same tracing
   setup would work unchanged with any other connector.
 - **Flushing buffered traces**: `tracerProvider.ForceFlush()` guarantees all
   recorded spans are written out before a short-lived console process exits.
