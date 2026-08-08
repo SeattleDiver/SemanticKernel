@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace VotingEnsembles
 {
@@ -38,11 +38,10 @@ namespace VotingEnsembles
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.8,
-                ResponseMimeType = "application/json",
-                ResponseSchema = typeof(ReasoningSample)
+                ResponseFormat = typeof(ReasoningSample)
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);

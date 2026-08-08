@@ -18,20 +18,20 @@ mistake rather than blend everyone's phrasing together.
   answers. Seeing both back to back is the point — same fan-out, two
   legitimately different fan-in strategies.
 - **Day 7 (DataAnalyst)** and **Day 31 (Self-Reflection Loop)** — structured
-  JSON output via `ResponseSchema`, and per-item defensive error handling
+  JSON output via `ResponseFormat`, and per-item defensive error handling
   that keeps one bad response from taking down a whole batch.
 
 ## Setup
 
 - .NET 10 SDK
-- A Gemini API key, available via the `GEMINI_API_KEY` environment variable
+- An OpenAI API key, available via the `OPENAI_API_KEY` environment variable
 - NuGet packages:
   - `Microsoft.SemanticKernel` `1.78.0`
-  - `Microsoft.SemanticKernel.Connectors.Google` `1.78.0-alpha`
+  - `Microsoft.SemanticKernel.Connectors.OpenAI` `1.78.0`
 
 ```
 dotnet add package Microsoft.SemanticKernel --version 1.78.0
-dotnet add package Microsoft.SemanticKernel.Connectors.Google --version 1.78.0-alpha
+dotnet add package Microsoft.SemanticKernel.Connectors.OpenAI --version 1.78.0
 ```
 
 ## Core Concepts
@@ -66,7 +66,10 @@ so votes consolidate on meaning, not on incidental formatting.
 **An ensemble should survive losing a member.** Voting doesn't need all N
 samples to agree — it needs enough of them to. `Program.cs` isolates each
 sample's call in its own `try`/`catch`; one dropped connection out of five
-just costs one vote, not the whole run.
+just costs one vote, not the whole run. A malformed JSON response is
+excluded the same way, even though it doesn't throw: a sample that comes
+back as the sentinel `"UNPARSEABLE"` is filtered out before tallying, so
+it can't accidentally cast (or win) a vote for a value nobody actually said.
 
 ## Full Walkthrough / Code
 
@@ -84,8 +87,10 @@ namespace VotingEnsembles
     internal class ReasoningSample
     {
         // finalAnswer is declared first (and requested first in the prompt) so it lands
-        // early in the model's output. Gemini's "step by step" reasoning can otherwise run
-        // long enough to exhaust the response before finalAnswer ever gets written.
+        // early in the model's output. A model's "step by step" reasoning can otherwise run
+        // long enough to exhaust the response before finalAnswer ever gets written - this
+        // was found against Gemini, but the same defensive field ordering is kept regardless
+        // of provider since it's cheap insurance against any model's tendency to ramble.
         [JsonPropertyName("finalAnswer")]
         public string FinalAnswer { get; set; } = string.Empty;
 
@@ -102,7 +107,7 @@ One independent, high-temperature attempt at the problem:
 ```csharp
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace VotingEnsembles
 {
@@ -134,11 +139,10 @@ namespace VotingEnsembles
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.8,
-                ResponseMimeType = "application/json",
-                ResponseSchema = typeof(ReasoningSample)
+                ResponseFormat = typeof(ReasoningSample)
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
@@ -193,6 +197,11 @@ namespace VotingEnsembles
 
         public static ConsensusResult Tally(IReadOnlyList<ReasoningSample> samples)
         {
+            if (samples.Count == 0)
+            {
+                throw new ArgumentException("Cannot tally votes over an empty sample set.", nameof(samples));
+            }
+
             var counts = samples
                 .GroupBy(s => Normalize(s.FinalAnswer), StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(g => g.Key, g => g.Count());
@@ -218,7 +227,7 @@ Fan out N isolated samples, then tally:
 ```csharp
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace VotingEnsembles
 {
@@ -228,11 +237,11 @@ namespace VotingEnsembles
 
         static async Task Main(string[] args)
         {
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
 
             var builder = Kernel.CreateBuilder();
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -272,12 +281,28 @@ namespace VotingEnsembles
                 Console.WriteLine($"--- Sample {i + 1} (answer: {samples[i].FinalAnswer}) ---\n{samples[i].Reasoning}\n");
             }
 
-            if (samples.Length < SampleCount)
+            // A parse failure isn't a dropped connection - it's a returned-but-unusable sample.
+            // Exclude it the same way, so a malformed response can't cast a real vote for the
+            // literal string "UNPARSEABLE".
+            ReasoningSample[] votableSamples = samples.Where(s => s.FinalAnswer != "UNPARSEABLE").ToArray();
+            int excludedCount = samples.Length - votableSamples.Length;
+            if (excludedCount > 0)
             {
-                Console.WriteLine($"Tally is based on {samples.Length} of {SampleCount} requested samples.\n");
+                Console.WriteLine($"[WARN] {excludedCount} sample(s) returned unparseable JSON and were excluded from voting.\n");
             }
 
-            ConsensusResult consensus = ConsensusVoter.Tally(samples);
+            if (votableSamples.Length == 0)
+            {
+                Console.WriteLine("\nAll samples were unparseable - no consensus can be computed.");
+                return;
+            }
+
+            if (votableSamples.Length < SampleCount)
+            {
+                Console.WriteLine($"Tally is based on {votableSamples.Length} of {SampleCount} requested samples.\n");
+            }
+
+            ConsensusResult consensus = ConsensusVoter.Tally(votableSamples);
 
             Console.WriteLine("--- Vote Tally ---");
             foreach (var (answer, votes) in consensus.VoteCounts.OrderByDescending(kv => kv.Value))
@@ -287,10 +312,15 @@ namespace VotingEnsembles
 
             if (consensus.IsTie)
             {
-                Console.WriteLine($"\nTIE - no single answer received a majority of {SampleCount} samples.");
+                Console.WriteLine($"\nTIE - no single answer received a majority of {votableSamples.Length} samples.");
+                Console.WriteLine("\n--- NO CONSENSUS (showing one tied answer) ---");
+            }
+            else
+            {
+                Console.WriteLine("\n--- CONSENSUS ANSWER ---");
             }
 
-            Console.WriteLine($"\n--- CONSENSUS ANSWER ---\n{consensus.WinningAnswer}");
+            Console.WriteLine(consensus.WinningAnswer);
         }
     }
 }
@@ -308,14 +338,18 @@ a uniformly correct field every time.
 
 `finalAnswer` is requested — and declared on the class — before
 `reasoning`, not after. This isn't stylistic. An earlier version of this
-lesson asked for reasoning first and got back long, looping
-self-verification text ("I am confident... ready to output... let's make
-sure...") that ran on so long the model never got to writing
-`finalAnswer` at all, leaving it an empty string on every sample and the
-vote tallying "unanimous agreement" on nothing. Capping `reasoning` at
-three sentences and asking for the answer first fixed both problems at
-once: the responses come back fast, and `finalAnswer` is guaranteed to
-already be committed before the model has any chance to ramble.
+lesson, tested against Gemini, asked for reasoning first and got back
+long, looping self-verification text ("I am confident... ready to
+output... let's make sure...") that ran on so long the model never got to
+writing `finalAnswer` at all, leaving it an empty string on every sample
+and the vote tallying "unanimous agreement" on nothing. Capping
+`reasoning` at three sentences and asking for the answer first fixed both
+problems at once: the responses come back fast, and `finalAnswer` is
+guaranteed to already be committed before the model has any chance to
+ramble. The series has since moved to OpenAI; this specific runaway
+hasn't been re-observed there, but the field ordering and sentence cap
+cost nothing and stay as cheap insurance against any model's tendency to
+over-explain before answering.
 
 Temperature stays at `0.8` for the same reason as Day 32 — the whole point
 is that five independent samples can genuinely diverge. Where this lesson

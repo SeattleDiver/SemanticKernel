@@ -14,8 +14,14 @@ namespace VotingEnsembles
         /// <summary>
         /// Groups the given samples by normalized answer and returns the majority result.
         /// </summary>
+        /// <exception cref="ArgumentException">Thrown if <paramref name="samples"/> is empty; there is no majority to compute.</exception>
         public static ConsensusResult Tally(IReadOnlyList<ReasoningSample> samples)
         {
+            if (samples.Count == 0)
+            {
+                throw new ArgumentException("Cannot tally votes over an empty sample set.", nameof(samples));
+            }
+
             var counts = samples
                 .GroupBy(s => Normalize(s.FinalAnswer), StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(g => g.Key, g => g.Count());
