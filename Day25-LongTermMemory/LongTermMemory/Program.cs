@@ -15,16 +15,19 @@ using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace LongTermMemory
 {
+    /// <summary>Entry point that wires up the Kernel, MemoryManager, and MemoryAgent, then runs the conversational loop.</summary>
     internal class Program
     {
+        /// <summary>Loads persisted facts, then loops on user input, chatting and extracting new facts in the background each turn.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // 1. Initialize the Kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -45,8 +48,19 @@ namespace LongTermMemory
                 if (string.IsNullOrWhiteSpace(input)) continue;
                 if (input.Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
 
-                // Step A: The Agent responds using the currently loaded memory
-                string response = await memoryAgent.ChatAsync(input, memoryManager.CurrentMemory);
+                // Step A: The Agent responds using the currently loaded memory. A
+                // transient network/API failure shouldn't crash the whole session -
+                // report it and let the user try again instead of losing the loop.
+                string response;
+                try
+                {
+                    response = await memoryAgent.ChatAsync(input, memoryManager.CurrentMemory);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"\n[ERROR] The agent could not respond: {ex.Message}");
+                    continue;
+                }
                 Console.WriteLine($"\nAI {response}");
 
                 // Step B: Fire-and-forget extraction in the background

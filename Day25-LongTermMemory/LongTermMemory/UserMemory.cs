@@ -6,11 +6,12 @@ using System.Text.Json.Serialization;
 
 namespace LongTermMemory
 {
+    /// <summary>
+    /// The data structure representing the agent's long-term storage.
+    /// </summary>
     internal class UserMemory
     {
-        /// <summary>
-        /// The data structure representing the agetn's long-term storage.
-        /// </summary>
+        /// <summary>The flat list of durable facts learned about the user so far.</summary>
         [JsonPropertyName("facts")]
         public List<string> Facts { get; set; } = new List<string>();
     }

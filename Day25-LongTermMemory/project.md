@@ -53,8 +53,9 @@ foreshadows the multi-agent orchestration patterns used later in Phase 3.
 - **Manual `ChatHistory` splicing** — the system/persona message is inserted
   at index 0 immediately before each call and removed immediately after, so
   the persistent history never accumulates stale system messages.
-- **Provider message-role constraints** — a code comment documents a real
-  Gemini restriction (a chat history can't contain only a system message),
+- **Provider message-role constraints** — a code comment notes that a chat
+  history containing only a system message has nothing for the model to
+  respond to, and some providers (Gemini among them) reject it outright,
   which is why the fact-extraction prompt is split into a system message and
   a separate user message.
 
@@ -83,6 +84,22 @@ a student stepping through this lesson:
 
 The docx's "Complete Code" listing for `Program.cs` and `MemoryManager.cs`
 was updated to match both fixes.
+
+**Fixed during the OpenAI migration's adversarial review:**
+
+- **`MemoryAgent.ChatAsync` had no exception handling around the persona
+  insert/remove pair.** A failed `GetChatMessageContentAsync` call would
+  leave the injected system message stuck at index 0 forever (the same bug
+  class already fixed in Day 20's `AiWorker.cs`), and the user's turn would
+  stay orphaned in history with no paired assistant reply. Now wrapped so a
+  failure rolls back both the persona and the orphaned user turn before
+  rethrowing, and `Program.cs`'s conversational loop now catches that
+  rethrown exception per turn instead of crashing the whole session.
+- **`MemoryManager.ExtractAndSaveFactAsync` could save a blank "fact."** A
+  non-null but empty/whitespace-only completion isn't equal to `"NONE"` by
+  string comparison, so it would have been added to `Facts` and persisted
+  to disk. Now guarded with `string.IsNullOrWhiteSpace` alongside the
+  `"NONE"` check.
 
 Several other gaps flagged in the prior analysis (`missing.md`) were
 deliberately left as enhancement opportunities rather than treated as

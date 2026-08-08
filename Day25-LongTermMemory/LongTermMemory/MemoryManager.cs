@@ -17,8 +17,12 @@ namespace LongTermMemory
         private readonly string _filePath;
         private readonly IChatCompletionService _chatService;
 
+        /// <summary>The currently loaded set of known facts about the user.</summary>
         public UserMemory CurrentMemory { get; private set;  }
 
+        /// <summary>Creates a manager that loads existing memory (if any) from the given file path.</summary>
+        /// <param name="chatService">The chat completion service used for fact extraction.</param>
+        /// <param name="filePath">The JSON file path memory is persisted to and loaded from.</param>
         public MemoryManager(IChatCompletionService chatService, string filePath = "user_memory.json")
         {
             _chatService = chatService;
@@ -26,10 +30,8 @@ namespace LongTermMemory
             CurrentMemory = LoadMemory();
         }
 
-        // Reads the memory file from disk if it exists; otherwise starts fresh
-        // with an empty fact list rather than failing on first run. Also falls
-        // back to a fresh UserMemory (instead of crashing on startup) if the
-        // file is empty, contains literal "null", or is otherwise corrupted.
+        /// <summary>Reads the memory file from disk if it exists, falling back to a fresh, empty <see cref="UserMemory"/> on first run or corruption.</summary>
+        /// <returns>The loaded (or freshly created) <see cref="UserMemory"/>.</returns>
         private UserMemory LoadMemory()
         {
             if (File.Exists(_filePath))
@@ -49,14 +51,16 @@ namespace LongTermMemory
         }
 
         /// <summary>
-        /// Analyzes the user input in the background to determin if a new fact should be saved
+        /// Analyzes the user input in the background to determine if a new fact should be saved.
         /// </summary>
+        /// <param name="userInput">The user's latest message to analyze for a durable personal fact.</param>
         public async Task ExtractAndSaveFactAsync(string userInput)
         {
-            // Prompt engineered specifcally for data extraction, ignoring conversational filler.
-            // The extraction rules are the system message; the actual text to analyze must be
-            // a separate user message - a ChatHistory containing only a system message is
-            // rejected by Gemini ("Chat history can't contain only system messages").
+            // Prompt engineered specifically for data extraction, ignoring conversational filler.
+            // The extraction rules are the system message; the actual text to analyze is a
+            // separate user message - a ChatHistory containing only a system message has
+            // nothing for the model to respond to, and some providers (Gemini among them)
+            // reject it outright.
             string systemPrompt = @"
                 Analyze the user's input.  If they state a permanent fact about themselves
                 (e.g. their name, preferences, job, family), extract it as a short sentence.
@@ -68,8 +72,10 @@ namespace LongTermMemory
             var response = await _chatService.GetChatMessageContentAsync(history);
             string fact = response.Content?.Trim() ?? "NONE";
 
-            // Only update the file if a valid fact was found
-            if (!fact.Equals("NONE", StringComparison.OrdinalIgnoreCase))
+            // Only update the file if a valid, non-empty fact was found. A blank/
+            // whitespace-only completion (e.g. a truncated or filtered response)
+            // isn't "NONE" by string comparison, so it needs its own guard here.
+            if (!string.IsNullOrWhiteSpace(fact) && !fact.Equals("NONE", StringComparison.OrdinalIgnoreCase))
             {
                 CurrentMemory.Facts.Add(fact);
                 SaveMemory();
@@ -77,8 +83,7 @@ namespace LongTermMemory
             }
         }
 
-        // Persists the current in-memory fact list back to the JSON file,
-        // overwriting it entirely each time.
+        /// <summary>Persists the current in-memory fact list back to the JSON file, overwriting it entirely each time.</summary>
         private void SaveMemory()
         {
             string json = JsonSerializer.Serialize(CurrentMemory, new JsonSerializerOptions { WriteIndented = true });
