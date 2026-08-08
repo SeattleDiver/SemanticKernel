@@ -1,5 +1,5 @@
 ﻿using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace UniversalProjectManager
 {
@@ -8,14 +8,22 @@ namespace UniversalProjectManager
     /// </summary>
     internal class DeveloperAgent : IProjectAgent
     {
-        public readonly Kernel _baseKernel;
+        // Step: private like every other agent's kernel field, so callers must go through
+        // the IProjectAgent contract instead of reaching in and grabbing the kernel directly.
+        private readonly Kernel _baseKernel;
+
+        /// <inheritdoc/>
         public string Name => "Developer";
 
+        /// <summary>Creates a developer agent that clones the given base kernel to write code for its assigned tasks.</summary>
+        /// <param name="baseKernel">The shared kernel to clone AI service registrations from.</param>
         public DeveloperAgent(Kernel baseKernel)
         {
             _baseKernel = baseKernel;
         }
 
+        /// <summary>Writes code for every pending task assigned to this agent, marking each complete as it finishes.</summary>
+        /// <param name="state">The shared project state to read pending tasks from and write results back to.</param>
         public async Task ExecuteAsync(ProjectState state)
         {
             // Filter the shared state for tasks assigned to this agent that are pending
@@ -29,7 +37,7 @@ namespace UniversalProjectManager
 
             // Clone the Kernel to ensure thread safety and avoid shared state issues
             Kernel isolatedKernel = _baseKernel.Clone();
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.1
             };

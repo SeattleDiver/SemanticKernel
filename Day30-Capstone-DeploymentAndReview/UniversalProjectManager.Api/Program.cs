@@ -4,8 +4,11 @@ using Scalar.AspNetCore;
 
 namespace UniversalProjectManager.Api
 {
+    /// <summary>Entry point that configures the ASP.NET Core Web API host, registering the Kernel and agents for DI.</summary>
     public class Program
     {
+        /// <summary>Builds and runs the Web API, registering the Kernel, every IProjectAgent, and the orchestrator as transient services.</summary>
+        /// <param name="args">Command-line arguments passed to the ASP.NET Core host.</param>
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -19,11 +22,11 @@ namespace UniversalProjectManager.Api
             builder.Services.AddTransient<Kernel>(sp =>
             {
 
-                string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                    ?? throw new Exception("GEMINI_API_KEY is missing");
+                string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                    ?? throw new Exception("OPENAI_API_KEY is missing");
 
                 IKernelBuilder kernelBuilder = Kernel.CreateBuilder();
-                kernelBuilder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+                kernelBuilder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
 
                 return kernelBuilder.Build();
             });

@@ -1,25 +1,28 @@
 ﻿// ------------------------------------------------------------------------------------------------
-// Day 28: Capstone Implementation(Plugins & Single Agents)
+// Day 30: Refinement, Deployment & Review
 // Project Overview
-// In Day 28, we implement the "Muscle" of the Universal Project Manager (UPM). Continuing in the
-// single Capstone solution we started on Day 27, we will add two concrete agents implementing our
-// IProjectAgent interface: the Planner Agent and the Developer Agent.
+// Day 30 closes the capstone arc: the same GoalRefiner -> Planner -> Developer -> Reviewer
+// workflow from Day 29, deployed both here (as a console app) and, side by side, as an
+// ASP.NET Core Web API in the UniversalProjectManager.Api project.
 // ------------------------------------------------------------------------------------------------
 
 using Microsoft.SemanticKernel;
 
 namespace UniversalProjectManager
 {
+    /// <summary>Entry point that builds the agent list and hands control to a ProjectOrchestrator for the whole workflow.</summary>
     internal class Program
     {
+        /// <summary>Prompts for a project idea, then runs the full Refiner/Planner/Developer/Reviewer cycle via the orchestrator.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // Initialize the Kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel baseKernel = builder.Build();
 
             Console.WriteLine("Universal Project Manager (UPM) - Phase 3 Orchestration");
@@ -45,7 +48,7 @@ namespace UniversalProjectManager
 
             try
             {
-                // Step: guard the run so a failed Gemini call doesn't crash the whole console session
+                // Step: guard the run so a failed OpenAI call doesn't crash the whole console session
                 await orchestrator.RunProjectAsync(projectState);
             }
             catch (Exception ex)

@@ -97,3 +97,39 @@ feedback was also left as-is — it's a debatable design choice rather than an
 unambiguous defect, and correcting it would ripple through the docx's
 Expected Output and example JSON response in ways disproportionate to a
 one-line teaching fix.
+
+## OpenAI migration notes
+
+Swaps `AddGoogleAIGeminiChatCompletion`/`GeminiPromptExecutionSettings`/
+`GeminiToolCallBehavior` for `AddOpenAIChatCompletion`/
+`OpenAIPromptExecutionSettings`/`ToolCallBehavior` (`gpt-4.1-mini`,
+`OPENAI_API_KEY`) across both project copies of every agent, `Program.cs`
+(console and Web API), and `ProjectController.cs`.
+
+**Fixed in both project copies**, matching a fix already applied to this
+same codebase in Days 27/28 that both Day 30 copies had drifted from:
+`DeveloperAgent._baseKernel` was declared `public readonly`, letting
+external callers reach in and grab the kernel directly instead of going
+through the `IProjectAgent` contract. Changed to `private readonly` in both
+`UniversalProjectManager` and `UniversalProjectManager.Api`. Also fixed a
+"cmpletion" typo in `ProjectOrchestrator`'s halt message (console-only
+output, not one of the prompt/log strings this lesson deliberately left
+alone).
+
+**Left untouched, respecting this lesson's own documented decisions:**
+the per-agent calls still have no try/catch of their own (unlike Days
+27-29) - this lesson's own fix was a single try/catch around the whole
+orchestration run in `Program.cs`/`ProjectController.cs`, which already
+catches any agent's failure at the boundary; adding narrower per-agent
+guards on top would be a design change beyond a straight provider swap.
+The `ReviewerAgent` description-overwrite behavior and the prompt/log
+typos ("techincal", "temperatore", "CreateTAsk", "Deos", "a string QA
+Reviewer") are unchanged for the same reason - both were considered and
+explicitly kept as-is in this lesson's own prior cleanup pass.
+
+**Pre-existing, unrelated to this migration:** `dotnet build` on
+`UniversalProjectManager.Api` reports `NU1903` - the transitive
+`Microsoft.OpenApi` 2.0.0 dependency (pulled in by
+`Microsoft.AspNetCore.OpenApi` 10.0.10) has a known high-severity advisory.
+Not introduced by the provider swap and not fixed here, since bumping it
+needs separate verification against this SK/`.NET 10` combination.
