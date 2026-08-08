@@ -35,14 +35,14 @@ makes the later RAG lessons land.
 - **Grounding and refusal instructions** — telling the model to answer only
   from the supplied text and to admit when it doesn't know, a core
   prompt-engineering pattern for reducing hallucination.
-- **`GeminiPromptExecutionSettings.Temperature = 0.0`** — using a
+- **`OpenAIPromptExecutionSettings.Temperature = 0.0`** — using a
   deterministic, low-variance setting for factual extraction tasks.
 - **Stateless Q&A loop** — each question is answered independently with no
   `ChatHistory`, in contrast to the memory-carrying chatbot from Day 1.
 
 ## Cleanup notes
 
-- Fixed: the Gemini call inside the question loop (`kernel.InvokePromptAsync`)
+- Fixed: the OpenAI call inside the question loop (`kernel.InvokePromptAsync`)
   had no error handling. Any transient failure (network hiccup, rate limit,
   malformed response) would throw out of the `while` loop and crash the
   whole console session, ending the demo mid-class. Wrapped the call in a
