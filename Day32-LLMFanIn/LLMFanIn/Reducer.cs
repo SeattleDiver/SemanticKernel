@@ -4,6 +4,9 @@ using Microsoft.SemanticKernel.Connectors.Google;
 
 namespace LLMFanIn
 {
+    /// <summary>
+    /// The fan-in step: combines N independent drafts into a single synthesized answer via an LLM call.
+    /// </summary>
     internal class Reducer
     {
         private readonly IChatCompletionService _chatService;
@@ -13,6 +16,9 @@ namespace LLMFanIn
             _chatService = chatService;
         }
 
+        /// <summary>
+        /// Synthesizes the given drafts into one answer that combines their strongest elements.
+        /// </summary>
         public async Task<SynthesisResult> SynthesizeAsync(string task, IReadOnlyList<string> drafts)
         {
             string draftsBlock = string.Join(
@@ -60,6 +66,9 @@ namespace LLMFanIn
             }
         }
 
+        /// <summary>
+        /// Fallback synthesis used when the reducer's own JSON response can't be parsed.
+        /// </summary>
         private static SynthesisResult FallbackTo(IReadOnlyList<string> drafts) => new()
         {
             SynthesizedAnswer = drafts[0],

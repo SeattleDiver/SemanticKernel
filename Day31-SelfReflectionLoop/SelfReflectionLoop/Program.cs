@@ -1,13 +1,20 @@
+// Day 31: Self-Reflection Loop
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;
 
 namespace SelfReflectionLoop
 {
+    /// <summary>
+    /// Entry point that runs a single agent through a bounded draft/critique/revise loop.
+    /// </summary>
     internal class Program
     {
         private const int MaxPasses = 3;
 
+        /// <summary>
+        /// Runs the draft/critique/revise loop against a fixed task and prints each pass.
+        /// </summary>
         static async Task Main(string[] args)
         {
             string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")

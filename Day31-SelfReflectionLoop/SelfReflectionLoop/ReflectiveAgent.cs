@@ -4,6 +4,9 @@ using Microsoft.SemanticKernel.Connectors.Google;
 
 namespace SelfReflectionLoop
 {
+    /// <summary>
+    /// A single agent that drafts, critiques its own output, and revises it - no second persona.
+    /// </summary>
     internal class ReflectiveAgent
     {
         private readonly IChatCompletionService _chatService;
@@ -13,6 +16,9 @@ namespace SelfReflectionLoop
             _chatService = chatService;
         }
 
+        /// <summary>
+        /// Generates a first-pass attempt at the given task.
+        /// </summary>
         public async Task<string> DraftAsync(string task)
         {
             var history = new ChatHistory(
@@ -25,6 +31,9 @@ namespace SelfReflectionLoop
             return result.Content ?? string.Empty;
         }
 
+        /// <summary>
+        /// Judges the given draft against the original task and returns a structured verdict.
+        /// </summary>
         public async Task<SelfCritique> CritiqueAsync(string task, string draft)
         {
             string prompt = $$"""
@@ -68,6 +77,9 @@ namespace SelfReflectionLoop
             }
         }
 
+        /// <summary>
+        /// Produces a revised draft that addresses the given critique feedback.
+        /// </summary>
         public async Task<string> ReviseAsync(string task, string draft, string feedback)
         {
             string prompt = $"""

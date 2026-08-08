@@ -3,6 +3,9 @@ using Microsoft.SemanticKernel.Connectors.Google;
 
 namespace LLMFanIn
 {
+    /// <summary>
+    /// Generates one independent, high-temperature attempt at a given task.
+    /// </summary>
     internal class Drafter
     {
         private readonly IChatCompletionService _chatService;
@@ -12,6 +15,9 @@ namespace LLMFanIn
             _chatService = chatService;
         }
 
+        /// <summary>
+        /// Produces a single free-text draft answering the given task.
+        /// </summary>
         public async Task<string> GenerateDraftAsync(string task)
         {
             var history = new ChatHistory(

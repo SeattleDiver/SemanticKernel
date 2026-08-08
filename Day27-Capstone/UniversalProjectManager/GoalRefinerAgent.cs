@@ -26,7 +26,7 @@ namespace UniversalProjectManager
                 Strip away conversational filler.
 
                 RAW REQUEST: {state.OriginalRequest}
-                ".Trim();
+                ";
 
             // Execute the prompt with a low temperature to ensure deterministic and professional output
             var settings = new GeminiPromptExecutionSettings 

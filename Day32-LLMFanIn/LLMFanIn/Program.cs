@@ -1,13 +1,20 @@
+// Day 32: LLM-Based Fan-In
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;
 
 namespace LLMFanIn
 {
+    /// <summary>
+    /// Entry point that fans out N independent drafts and fans them back in via an LLM reducer.
+    /// </summary>
     internal class Program
     {
         private const int FanOutCount = 3;
 
+        /// <summary>
+        /// Generates <see cref="FanOutCount"/> concurrent drafts and synthesizes them into one answer.
+        /// </summary>
         static async Task Main(string[] args)
         {
             string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
