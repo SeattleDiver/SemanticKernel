@@ -12,25 +12,32 @@ namespace RagAgent
 {
     // A single knowledge-base entry: the original text plus its embedding
     // vector, so similarity can be computed without re-embedding on every query.
+    /// <summary>A single knowledge-base entry: the source text plus its precomputed embedding vector.</summary>
     public class KnowledgeDocument
     {
+        /// <summary>The document's original plain-text content.</summary>
         public string Text { get; set; }
+
+        /// <summary>The embedding vector for <see cref="Text"/>, used to compute similarity without re-embedding on every query.</summary>
         public ReadOnlyMemory<float> Vector { get; set; }
     }
 
+    /// <summary>Entry point that runs a hand-rolled RAG pipeline: embed, retrieve by cosine similarity, then answer grounded on the match.</summary>
     class Program
     {
+        /// <summary>Embeds a small knowledge base, retrieves the best match for a question, and answers using only that context.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // Step 2: Initialize the Kernel with Both Chat and Embedding models
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
-            string modelId = "gemini-2.5-flash";
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
+            string modelId = "gpt-4.1-mini";
 
             // Add the chat model and embedding model to the kernel
-            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
-            builder.AddGoogleAIEmbeddingGenerator("gemini-embedding-001", apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
+            builder.AddOpenAIEmbeddingGenerator("text-embedding-3-small", apiKey);
 
             Kernel kernel = builder.Build();
 
@@ -117,6 +124,10 @@ USER QUESTION:
         // direction/meaning, 0.0 = unrelated). This is the core math behind
         // semantic search: documents whose vectors point in a similar
         // direction to the question's vector are considered relevant.
+        /// <summary>Computes the cosine similarity between two embedding vectors.</summary>
+        /// <param name="vectorA">The first embedding vector.</param>
+        /// <param name="vectorB">The second embedding vector.</param>
+        /// <returns>A value from -1.0 to 1.0, where 1.0 means the vectors point in the same direction; 0.0 if either vector has zero magnitude.</returns>
         static float CalculateCosineSimilarity(ReadOnlySpan<float> vectorA, ReadOnlySpan<float> vectorB)
         {
             float dotProduct = 0, normA = 0, normB = 0;

@@ -4,11 +4,20 @@
 
 A minimal, hand-rolled Retrieval-Augmented Generation (RAG) pipeline with no
 vector database involved. A small "company knowledge base" of five plain-text
-facts is embedded into vectors using a Gemini embedding model, the user's
+facts is embedded into vectors using an OpenAI embedding model, the user's
 question is embedded the same way, and cosine similarity is computed by hand
 to find the single most relevant document. That document is stuffed into a
 grounded prompt template and handed to the chat model, which is instructed to
 answer only from the supplied context.
+
+## OpenAI migration note
+
+`AddOpenAIEmbeddingGenerator` (the direct analog of Gemini's
+`AddGoogleAIEmbeddingGenerator`) is marked experimental in this SK version
+and fails the build with `SKEXP0010` unless suppressed. `RagAgent.csproj`
+now sets `<NoWarn>$(NoWarn);SKEXP0010</NoWarn>` to acknowledge and accept
+this — the same experimental-surface caveat CLAUDE.md flags for
+`Agents.*`/`Process.*` namespaces applies here too, just for embeddings.
 
 ## Why it matters in the series
 
@@ -21,11 +30,11 @@ vector database that automates the same steps.
 
 ## Core concepts taught
 
-- **Two services, one Kernel** — `AddGoogleAIGeminiChatCompletion` and
-  `AddGoogleAIEmbeddingGenerator` registered side by side, since RAG needs
+- **Two services, one Kernel** — `AddOpenAIChatCompletion` and
+  `AddOpenAIEmbeddingGenerator` registered side by side, since RAG needs
   both a way to embed text and a way to generate answers.
 - **`IEmbeddingGenerator<string, Embedding<float>>`** — the
-  `Microsoft.Extensions.AI` abstraction (arriving transitively via the Google
+  `Microsoft.Extensions.AI` abstraction (arriving transitively via the OpenAI
   connector package) used to turn any string into a `ReadOnlyMemory<float>`
   vector via `GenerateVectorAsync`.
 - **Cosine similarity, implemented by hand** — `CalculateCosineSimilarity`
@@ -58,8 +67,8 @@ vector database that automates the same steps.
   `KnowledgeDocument.Text` nullable-reference warning (`CS8618`) — none of
   these block the tutorial as written, so they were left for a future
   revision rather than fixed here.
-- Verified the docx's package versions (`Microsoft.SemanticKernel` 1.77.0,
-  `Microsoft.SemanticKernel.Connectors.Google` 1.77.0-alpha) and extension
-  method names (`AddGoogleAIGeminiChatCompletion`,
-  `AddGoogleAIEmbeddingGenerator`) still match the `.csproj` and `Program.cs`
-  exactly — no stale package/method references found.
+- Verified the docx's package versions (`Microsoft.SemanticKernel` 1.78.0,
+  `Microsoft.SemanticKernel.Connectors.OpenAI` 1.78.0) and extension
+  method names (`AddOpenAIChatCompletion`, `AddOpenAIEmbeddingGenerator`)
+  still match the `.csproj` and `Program.cs` exactly — no stale
+  package/method references found.
