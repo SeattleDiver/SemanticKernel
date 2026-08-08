@@ -60,7 +60,7 @@ Two small, high-impact fixes were applied:
    a real nullable-reference inconsistency that left it as the only property
    without a safe default.
 2. **`GoalRefinerAgent.ExecuteAsync` now wraps its `InvokePromptAsync` call in
-   a try/catch.** Previously, any failure of the underlying Gemini call
+   a try/catch.** Previously, any failure of the underlying OpenAI call
    (network blip, rate limit, content filter) would throw unhandled and
    crash the entire console session with a raw stack trace. It now reports a
    short, friendly message and leaves `RefinedGoal` at its safe default

@@ -2,16 +2,19 @@
 
 namespace UniversalProjectManager
 {
+    /// <summary>Entry point that lays down the blackboard architecture: a shared ProjectState, run through a GoalRefinerAgent.</summary>
     internal class Program
     {
+        /// <summary>Prompts for a rough project idea, refines it via GoalRefinerAgent, and prints the resulting ProjectState.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // Initialize the Kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             Console.WriteLine("Universal Project Manager (UPM) Initialized");
