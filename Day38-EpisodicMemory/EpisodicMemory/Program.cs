@@ -17,12 +17,12 @@ namespace EpisodicMemory
         /// </summary>
         static async Task Main(string[] args)
         {
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
 
             var builder = Kernel.CreateBuilder();
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
-            builder.AddGoogleAIEmbeddingGenerator("gemini-embedding-001", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
+            builder.AddOpenAIEmbeddingGenerator("text-embedding-3-small", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();

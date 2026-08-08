@@ -25,14 +25,14 @@ that.
 ## Setup
 
 - .NET 10 SDK
-- A Gemini API key, available via the `GEMINI_API_KEY` environment variable
+- An OpenAI API key, available via the `OPENAI_API_KEY` environment variable
 - NuGet packages:
   - `Microsoft.SemanticKernel` `1.78.0`
-  - `Microsoft.SemanticKernel.Connectors.Google` `1.79.0-alpha`
+  - `Microsoft.SemanticKernel.Connectors.OpenAI` `1.78.0`
 
 ```
 dotnet add package Microsoft.SemanticKernel --version 1.78.0
-dotnet add package Microsoft.SemanticKernel.Connectors.Google --version 1.79.0-alpha
+dotnet add package Microsoft.SemanticKernel.Connectors.OpenAI --version 1.78.0
 ```
 
 ## Core Concepts
@@ -54,16 +54,20 @@ facts get captured in the first place.
 
 **A schema with a bool before a string can silently lose the string.**
 The first version of `FactExtractionResult` had two fields -
-`isDurableFact` (bool) and `fact` (string), in that order. Every single
-live call came back as `{"isDurableFact": true}` with no `fact` field at
-all - not malformed JSON, just a *complete*, valid object missing the
-field that mattered. The fix wasn't reordering fields (Day 33's fix for a
-different bug); it was removing the bool entirely. A single `fact` field,
-empty string meaning "nothing to remember," carries the same information
-with one field instead of two whose interaction apparently confuses the
-model's structured-output path. When two fields together produce a result
-neither would individually, collapsing them into one is worth trying before
-anything more elaborate.
+`isDurableFact` (bool) and `fact` (string), in that order. Against
+**Gemini**, every single live call came back as `{"isDurableFact": true}`
+with no `fact` field at all - not malformed JSON, just a *complete*, valid
+object missing the field that mattered. The fix wasn't reordering fields
+(Day 33's fix for a different bug); it was removing the bool entirely. A
+single `fact` field, empty string meaning "nothing to remember," carries
+the same information with one field instead of two whose interaction
+apparently confused Gemini's structured-output path. The series has since
+moved to OpenAI, and this specific failure hasn't been re-tested against
+it - OpenAI's `ResponseFormat = typeof(T)` schema mode may or may not have
+shown the same behavior. Either way, the single-field design is worth
+keeping: when two fields together produce a result neither would
+individually, collapsing them into one is worth trying before anything
+more elaborate.
 
 **Keeping both retrieval strategies side by side is the actual lesson.**
 `RetrieveByRecency` isn't dead code kept for comparison - printing both
@@ -106,7 +110,7 @@ namespace EpisodicMemory
 ```csharp
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace EpisodicMemory
 {
@@ -139,11 +143,10 @@ namespace EpisodicMemory
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.0,
-                ResponseMimeType = "application/json",
-                ResponseSchema = typeof(FactExtractionResult)
+                ResponseFormat = typeof(FactExtractionResult)
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
@@ -233,12 +236,12 @@ namespace EpisodicMemory
     {
         static async Task Main(string[] args)
         {
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
 
             var builder = Kernel.CreateBuilder();
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
-            builder.AddGoogleAIEmbeddingGenerator("gemini-embedding-001", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
+            builder.AddOpenAIEmbeddingGenerator("text-embedding-3-small", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -313,7 +316,11 @@ both live, so the difference in their output is the whole demonstration.
 
 ## Expected Result
 
-A real run produced this exact transcript:
+A real run produced this exact transcript (captured against Gemini before
+this lesson's migration to OpenAI - the retrieval rankings and which turn
+lands in which bucket are structural, driven by the scripted turns and
+cosine similarity, and should hold under OpenAI too, but the exact
+fact-restatement wording will differ):
 
 ```
 === Recording conversation turns ===
