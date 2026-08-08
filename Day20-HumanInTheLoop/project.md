@@ -2,7 +2,7 @@
 
 ## What this project builds
 
-A console application that drafts a corporate email announcement with Gemini
+A console application that drafts a corporate email announcement with OpenAI
 and refuses to let that draft go anywhere without an explicit human
 "APPROVED" verdict. `AiWorker` owns the model interaction (persona injection,
 generation, cleanup); `HumanGatekeeper` owns the console I/O that blocks
@@ -33,9 +33,9 @@ orchestrations (multi-agent, coordinator) can drop in as a safety gate.
   removes it right after, so the persisted `ChatHistory` only ever contains
   the real user/assistant exchange.
 - **Feedback-as-Context Loop** — a rejected draft's human feedback is
-  appended to `history` as a new user message, which also conveniently
-  satisfies Gemini's strict alternating user/assistant turn-taking
-  requirement without any extra "ghost message" engineering.
+  appended to `history` as a new user message, which keeps the conversation
+  a clean, natural user/assistant back-and-forth with no extra "ghost
+  message" engineering needed.
 - **Bounded Loop Termination** — the `while` loop is guarded by both
   `isApproved` and `currentRevision < maxRevisions`, guaranteeing the
   program terminates even if a human never types "APPROVED".

@@ -9,19 +9,25 @@ using Microsoft.SemanticKernel.ChatCompletion;
 namespace HumanInTheLoop
 {
     /// <summary>
-    /// Encapsulates the AI Persona and the Native Orchestration logic required to communicate with Gemini
+    /// Encapsulates the AI persona and the native orchestration logic required to generate a draft.
     /// </summary>
     internal class AiWorker
     {
         private readonly IChatCompletionService _chatService;
         private readonly string _persona;
 
+        /// <summary>Creates a worker that drafts responses under the given persona using the supplied chat service.</summary>
+        /// <param name="chatService">The chat completion service used to generate drafts.</param>
+        /// <param name="persona">The system-prompt persona to swap in for each generation call.</param>
         public AiWorker(IChatCompletionService chatService, string persona)
         {
             _chatService = chatService;
             _persona = persona;
         }
 
+        /// <summary>Generates a draft by temporarily injecting this worker's persona into shared history, then removing it.</summary>
+        /// <param name="history">The shared conversation history to draft from and append the result to.</param>
+        /// <returns>The generated draft text.</returns>
         public async Task<string> GenerateDraftAsync(ChatHistory history)
         {
             // 1. Inject the System Perona at the top of the history
@@ -30,7 +36,7 @@ namespace HumanInTheLoop
 
             try
             {
-                // 2. enerate the draft using Gemini
+                // 2. Generate the draft using the model
                 var result = await _chatService.GetChatMessageContentAsync(history);
                 string draft = result.Content ?? "No draft generated.";
 

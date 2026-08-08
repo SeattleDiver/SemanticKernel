@@ -10,16 +10,19 @@ using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace HumanInTheLoop
 {
+    /// <summary>Entry point that pairs an AI drafting worker with a hard human-approval gate the model cannot talk past.</summary>
     class Program
     {
+        /// <summary>Runs a bounded draft/review loop that only ends on an explicit human "APPROVED" verdict.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // 1. Init the kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -35,7 +38,7 @@ namespace HumanInTheLoop
             Console.Write("What is the top of the announcement? ");
             string? topic = Console.ReadLine();
 
-            // The initial prompt sets the first 'User' role for Gemini
+            // The initial prompt sets the first 'User' turn in the conversation
             history.AddUserMessage($"Draft an email announcement regarding: {topic}");
 
             bool isApproved = false;
@@ -74,10 +77,10 @@ namespace HumanInTheLoop
                 }
                 else
                 {
-                    // GEMINI PROTOCOL: The human's feedback naturally acts as the 'User' role,
-                    // perfectly satisfying Gemini's User -> Assistant -> User requirement.
+                    // The human's feedback naturally acts as the next 'User' turn,
+                    // keeping the conversation as a clean user/assistant back-and-forth.
                     history.AddUserMessage($"The draft was rejected.  Please review based on this feedback: {result.Feedback}");
-                    Console.WriteLine("\nSending feedback to  the AI...");
+                    Console.WriteLine("\nSending feedback to the AI...");
                 }
 
                 currentRevision++;
@@ -85,7 +88,7 @@ namespace HumanInTheLoop
 
             if (!isApproved && !aiServiceFailed)
             {
-                Console.WriteLine("\n Maximum revisions reached.  Workflow stopped.");
+                Console.WriteLine("\nMaximum revisions reached.  Workflow stopped.");
             }
 
         }
