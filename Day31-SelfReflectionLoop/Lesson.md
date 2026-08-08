@@ -69,9 +69,10 @@ as plain text — not as chat turns the model authored — forces each critique
 to re-derive its judgment from the artifact alone.
 
 **A critique is a structured verdict, not free text.** `SelfCritique`
-carries an explicit `IsSatisfactory` boolean alongside `Feedback`. This is
-what makes the loop's exit condition code, not vibes — the loop doesn't
-try to infer "is it done?" by parsing prose; it reads a field.
+exposes an `IsSatisfactory` check the loop reads as a field, not something
+it infers by parsing prose. It's derived from a single `Feedback` string
+rather than a separate boolean returned by the model — see Explanation for
+why a second field turned out to be actively harmful here.
 
 **Bounded iteration is the safety net, not the goal.** `MaxPasses = 3`
 guarantees termination even if the critique step never reports
@@ -83,7 +84,8 @@ an intentional "good enough, move on" boundary.
 
 ### `SelfCritique.cs`
 
-The structured shape the critique step must return:
+The structured shape the critique step must return. `IsSatisfactory` is
+computed in C#, not deserialized from the model - see Explanation:
 
 ```csharp
 using System.Text.Json.Serialization;
@@ -92,11 +94,10 @@ namespace SelfReflectionLoop
 {
     internal class SelfCritique
     {
-        [JsonPropertyName("isSatisfactory")]
-        public bool IsSatisfactory { get; set; }
-
         [JsonPropertyName("feedback")]
         public string Feedback { get; set; } = string.Empty;
+
+        public bool IsSatisfactory => string.IsNullOrWhiteSpace(Feedback);
     }
 }
 ```
@@ -148,10 +149,11 @@ namespace SelfReflectionLoop
                 YOUR DRAFT:
                 {{draft}}
 
+                If the draft already satisfies the task exactly, respond with an empty string.
+
                 Output ONLY valid JSON matching this schema:
                 {
-                    "isSatisfactory": true/false,
-                    "feedback": "Specific, actionable feedback on what to fix. Empty string if satisfactory."
+                    "feedback": "Specific, actionable feedback on what to fix, or an empty string if satisfactory."
                 }
                 """;
 
@@ -170,11 +172,11 @@ namespace SelfReflectionLoop
             try
             {
                 return JsonSerializer.Deserialize<SelfCritique>(response.Content ?? "{}")
-                    ?? new SelfCritique { IsSatisfactory = false, Feedback = "Failed to parse self-critique JSON." };
+                    ?? new SelfCritique { Feedback = "Failed to parse self-critique JSON." };
             }
             catch (JsonException)
             {
-                return new SelfCritique { IsSatisfactory = false, Feedback = "Failed to parse self-critique JSON." };
+                return new SelfCritique { Feedback = "Failed to parse self-critique JSON." };
             }
         }
 
@@ -288,10 +290,22 @@ benefits from consistency. Running the critique cold makes the
 
 The loop caps at `MaxPasses = 3`, giving at most 3 drafts and 3 critiques.
 Unlike Day 18's `while` loop (which watches for a literal `"APPROVED"`
-string from a *different* persona), the exit condition here is a boolean
-field the agent set about its own work — there's no second opinion to wait
-on, so the loop can end the instant the agent is satisfied with itself,
-or run out of patience with itself.
+string from a *different* persona), the exit condition here is read from
+the agent's own critique of its own work — there's no second opinion to
+wait on, so the loop can end the instant the agent is satisfied with
+itself, or run out of patience with itself.
+
+**Why `IsSatisfactory` isn't deserialized from the model.** The first
+version of this lesson had `SelfCritique` ask for two fields -
+`isSatisfactory` (bool) and `feedback` (string), mirroring how the schema
+reads out loud. Forcing an unsatisfactory first draft to test the revision
+path exposed a real bug: the model reliably returned
+`{"isSatisfactory": false}` with no `feedback` field at all - a complete,
+valid JSON object, just missing the one piece of information the loop
+actually needed to act on. The fix - also used in Day 38 for the same
+failure shape - was to drop the bool and derive it from whether `feedback`
+came back empty. One field can't be partially missing in a way that
+silently breaks the loop; two fields, it turns out, can.
 
 ## Expected Result
 

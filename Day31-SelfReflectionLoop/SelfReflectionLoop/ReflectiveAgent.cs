@@ -47,10 +47,11 @@ namespace SelfReflectionLoop
                 YOUR DRAFT:
                 {{draft}}
 
+                If the draft already satisfies the task exactly, respond with an empty string.
+
                 Output ONLY valid JSON matching this schema:
                 {
-                    "isSatisfactory": true/false,
-                    "feedback": "Specific, actionable feedback on what to fix. Empty string if satisfactory."
+                    "feedback": "Specific, actionable feedback on what to fix, or an empty string if satisfactory."
                 }
                 """;
 
@@ -69,11 +70,11 @@ namespace SelfReflectionLoop
             try
             {
                 return JsonSerializer.Deserialize<SelfCritique>(response.Content ?? "{}")
-                    ?? new SelfCritique { IsSatisfactory = false, Feedback = "Failed to parse self-critique JSON." };
+                    ?? new SelfCritique { Feedback = "Failed to parse self-critique JSON." };
             }
             catch (JsonException)
             {
-                return new SelfCritique { IsSatisfactory = false, Feedback = "Failed to parse self-critique JSON." };
+                return new SelfCritique { Feedback = "Failed to parse self-critique JSON." };
             }
         }
 
