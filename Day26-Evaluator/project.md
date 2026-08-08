@@ -28,8 +28,8 @@ any other code does.
 - **Rubric-driven prompting** — the judge's prompt encodes an explicit
   numeric rubric (5/3/1) and a concrete pass rule, turning a subjective "is
   this good?" judgment into a repeatable, criteria-based one.
-- **Structured JSON output** — `GeminiPromptExecutionSettings.ResponseMimeType
-  = "application/json"` constrains the judge's response to valid JSON that
+- **Structured JSON output** — `OpenAIPromptExecutionSettings.ResponseFormat
+  = "json_object"` constrains the judge's response to valid JSON that
   can be deserialized straight into a strongly-typed `EvaluationResult`.
 - **Temperature as a reliability control** — the target agent uses a higher
   temperature (0.4) for natural answers, while the judge uses 0.0 to make
