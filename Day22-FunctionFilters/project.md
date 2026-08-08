@@ -7,15 +7,15 @@ A console app that sends one scripted request through a Semantic Kernel
 cross-cutting filters wired in via dependency injection:
 
 - **`PromptLoggingFilter`** (`IPromptRenderFilter`) intercepts the fully
-  rendered prompt text immediately before it leaves the process for Gemini.
+  rendered prompt text immediately before it leaves the process for OpenAI.
 - **`AuditFunctionFilter`** (`IFunctionInvocationFilter`) wraps every plugin
   invocation with timing and before/after audit logging.
 
 The one call to `kernel.InvokePromptAsync` fans out into: the prompt filter
-(logging the initial question), the real Gemini call (which decides a tool
+(logging the initial question), the real OpenAI call (which decides a tool
 is needed), the function filter (timing/auditing the plugin call), the
 `SecureDatabasePlugin.GetBalanceAsync` method itself, the prompt filter again
-(logging the follow-up prompt carrying the tool result), and finally Gemini's
+(logging the follow-up prompt carrying the tool result), and finally OpenAI's
 natural-language answer.
 
 ## Why it matters in the series
@@ -48,7 +48,7 @@ the same filter/interception model.
 - **Short-circuiting as a security hook** — because the filter controls
   whether `next(context)` is ever called, it can veto an operation entirely
   (e.g., reject a request without letting a sensitive plugin run).
-- **Why AutoInvoke matters** — `GeminiToolCallBehavior.AutoInvokeKernelFunctions`
+- **Why AutoInvoke matters** — `ToolCallBehavior.AutoInvokeKernelFunctions`
   is what causes Semantic Kernel to actually execute the requested function
   (and therefore fire `AuditFunctionFilter`) instead of just reporting that
   the model wants to call it.

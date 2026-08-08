@@ -10,10 +10,13 @@ using System.Diagnostics;
 namespace FunctionFilters
 {
     /// <summary>
-    /// Intercepts tool calls made by the AAI, acting as a security and observability layer.
+    /// Intercepts tool calls made by the AI, acting as a security and observability layer.
     /// </summary>
     internal class AuditFunctionFilter : IFunctionInvocationFilter
     {
+        /// <summary>Times and logs a plugin invocation before and after letting it run.</summary>
+        /// <param name="context">The invocation context describing which function was requested and, after <paramref name="next"/> runs, its result.</param>
+        /// <param name="next">Delegate that invokes the actual plugin method; not calling it would veto the operation.</param>
         public async Task OnFunctionInvocationAsync(FunctionInvocationContext context, Func<FunctionInvocationContext, Task> next)
         {
             // 1. Pre-Execution logic

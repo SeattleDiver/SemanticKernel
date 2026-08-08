@@ -9,19 +9,22 @@
 // logging/observability code.
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace FunctionFilters
 {
+    /// <summary>Entry point that wires prompt/function filters into a kernel and issues one tool-triggering request.</summary>
     internal class Program
     {
+        /// <summary>Registers the logging/audit filters and a plugin, then sends a request that exercises the whole pipeline.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
 
             // 1. Register our Custom Filters via Dependency Injection
             builder.Services.AddSingleton<IPromptRenderFilter, PromptLoggingFilter>();
@@ -38,13 +41,13 @@ namespace FunctionFilters
             Console.WriteLine($"\nUser: {userRequest}");
 
             // 3. Execute with AutoInvoke so the LLM triggers the function filter
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
-                ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
+                ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
             };
 
-            // This single line triggers the prompt fileter, the Gemini API,
-            // the function filter, the C# tool, and the final Gemini summary!
+            // This single line triggers the prompt filter, the OpenAI API,
+            // the function filter, the C# tool, and the final OpenAI summary!
             var result = await kernel.InvokePromptAsync(userRequest, new KernelArguments(settings));
 
             Console.WriteLine($"\n[AI FINAL RESPONSE]: {result}");
