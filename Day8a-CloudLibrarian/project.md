@@ -4,7 +4,7 @@
 
 The same five-fact "company knowledge base" RAG pipeline from Day 8,
 with the hand-rolled parts replaced by a real cloud vector database. The
-knowledge base is embedded with `gemini-embedding-001` exactly as
+knowledge base is embedded with `text-embedding-3-small` exactly as
 before, but instead of holding the vectors in a `List<KnowledgeDocument>`
 and computing cosine similarity in a for-loop, each fact is upserted
 into a Pinecone serverless index through Semantic Kernel's
@@ -14,6 +14,19 @@ embedded the same way and handed to Pinecone's own
 similarity score. That match is stuffed into the same grounded prompt
 template Day 8 used, so the two lessons are directly comparable.
 
+## OpenAI migration note
+
+`AddOpenAIEmbeddingGenerator` (like Day 8's) is marked experimental in
+this SK version and fails the build with `SKEXP0010` unless suppressed;
+`CloudLibrarian.csproj` now sets `<NoWarn>$(NoWarn);SKEXP0010</NoWarn>`.
+More importantly, the vector dimension is a real breaking change, not a
+cosmetic one: `gemini-embedding-001` defaulted to 3072 dimensions,
+but `text-embedding-3-small` defaults to **1536**. The
+`[VectorStoreVector(...)]` attribute on `KnowledgeRecord.Vector` is now
+`1536` to match — leaving it at `3072` would either fail the upsert or
+silently corrupt the index, since Pinecone indexes are created with a
+fixed dimension the first time `EnsureCollectionExistsAsync` runs.
+
 ## Why it matters in the series
 
 Day 8 was explicit that its manual embed-and-scan approach was a
@@ -21,7 +34,7 @@ stand-in for "what a real vector database automates." This lesson is
 that automation: the same retrieval task, but backed by an index that
 scales to millions of documents instead of a handful living in memory.
 It's also the first lesson with two external cloud dependencies at
-once (Gemini for embeddings/chat, Pinecone for storage/search), which
+once (OpenAI for embeddings/chat, Pinecone for storage/search), which
 is closer to what a production RAG system actually looks like.
 
 ## Core concepts taught
@@ -40,7 +53,7 @@ is closer to what a production RAG system actually looks like.
   provider-agnostic lifecycle for a vector collection: create it if
   missing, write records into it, and query it by vector similarity,
   replacing Day 8's `OrderByDescending(CalculateCosineSimilarity)`.
-- **A second cloud credential alongside `GEMINI_API_KEY`** —
+- **A second cloud credential alongside `OPENAI_API_KEY`** —
   `PINECONE_API_KEY`, read and validated the same defensive way, since
   this lesson now depends on two independent external services either
   of which can fail.
@@ -62,11 +75,12 @@ is closer to what a production RAG system actually looks like.
   named property) was confirmed against the real package by building a
   throwaway probe project before writing this lesson's code, and the
   full lesson project itself builds clean with `dotnet build`.
-- **The vector dimension is hardcoded to 3072** to match
-  `gemini-embedding-001`'s default output size (it supports 128–3072 via
-  `outputDimensionality`, but this lesson doesn't configure that, so it
-  uses the default). If a future embedding model changes its default
-  dimension, this constant needs to move with it.
+- **The vector dimension is hardcoded to 1536** to match
+  `text-embedding-3-small`'s default output size (it supports lower
+  dimensions via the connector's optional `dimensions` parameter, but
+  this lesson doesn't configure that, so it uses the default). If a
+  future embedding model changes its default dimension, this constant
+  needs to move with it.
 - **Pinecone's own .NET SDK support is a real risk worth knowing about
   before you build on this further:** Pinecone archived their official
   `pinecone-dotnet-client` repository, and Microsoft's own connector
@@ -85,7 +99,11 @@ is closer to what a production RAG system actually looks like.
   in your Pinecone project, check the dashboard for your account's
   default serverless cloud/region rather than assuming the code is
   wrong.
-- Same scope boundaries as Day 8: no retry/backoff around the Gemini or
+- Same scope boundaries as Day 8: no retry/backoff around the OpenAI or
   Pinecone calls beyond the top-level guard around collection creation,
   no caching of embeddings across runs, and a single hardcoded question
   instead of an interactive loop.
+- **Known flake, not a bug in this lesson's code:** Pinecone is eventually
+  consistent, so `SearchAsync` immediately after the upsert loop can
+  occasionally return zero results if the index hasn't caught up yet. If
+  a run prints "No matching documents were found," just re-run it.

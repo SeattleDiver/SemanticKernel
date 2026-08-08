@@ -22,35 +22,42 @@ namespace CloudLibrarian
     // Semantic Kernel's Vector Store abstraction (Microsoft.Extensions.VectorData)
     // reads to map this POCO onto the underlying Pinecone index - a key field,
     // one or more filterable/returnable data fields, and the embedding itself.
-    // 3072 matches gemini-embedding-001's default output size.
+    // 1536 matches text-embedding-3-small's default output size.
+    /// <summary>The record shape stored in Pinecone: an id, the source text, and its embedding vector.</summary>
     public class KnowledgeRecord
     {
+        /// <summary>Unique identifier for this record within the collection.</summary>
         [VectorStoreKey]
         public string Id { get; set; } = "";
 
+        /// <summary>The source fact's plain-text content, returned alongside search results.</summary>
         [VectorStoreData]
         public string Text { get; set; } = "";
 
-        [VectorStoreVector(3072, DistanceFunction = DistanceFunction.CosineSimilarity)]
+        /// <summary>The embedding vector for <see cref="Text"/>, indexed by Pinecone for cosine-similarity search.</summary>
+        [VectorStoreVector(1536, DistanceFunction = DistanceFunction.CosineSimilarity)]
         public ReadOnlyMemory<float> Vector { get; set; }
     }
 
+    /// <summary>Entry point that runs Day 8's RAG pipeline against a real Pinecone vector store instead of an in-memory list.</summary>
     class Program
     {
+        /// <summary>Upserts the knowledge base into Pinecone, retrieves the best match for a question, and answers using only that context.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
-            // Step 1: Read both API keys. Gemini generates the embeddings and
+            // Step 1: Read both API keys. OpenAI generates the embeddings and
             // answers the question; Pinecone stores and searches the vectors.
-            string geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
+            string openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
             string pineconeApiKey = Environment.GetEnvironmentVariable("PINECONE_API_KEY")
                 ?? throw new Exception("PINECONE_API_KEY environment variable is not set.");
 
             // Step 2: Initialize the Kernel with chat and embedding models, same
             // as Day 8.
             var builder = Kernel.CreateBuilder();
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", geminiApiKey);
-            builder.AddGoogleAIEmbeddingGenerator("gemini-embedding-001", geminiApiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", openAiApiKey);
+            builder.AddOpenAIEmbeddingGenerator("text-embedding-3-small", openAiApiKey);
             Kernel kernel = builder.Build();
 
             var embeddingService = kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
