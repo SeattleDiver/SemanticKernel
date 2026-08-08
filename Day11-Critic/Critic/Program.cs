@@ -8,20 +8,23 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace critic
 {
+    /// <summary>Entry point that runs a single-shot, rubric-based code critique on a hard-coded C# snippet.</summary>
     class Program
     {
+        /// <summary>Sends a snippet with a deliberate bug through a rubric prompt and prints the model's SCORE/PROS/CONS/FIX critique.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
-            // 1. Setup kernel witih Gemini 2.5 flash
+            // 1. Setup kernel with an OpenAI chat model
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             // 2. The code to be critiqued (output from day 10)
@@ -52,7 +55,7 @@ User: Review this c# code: {{$input}}";
 
             // 4. Execute the Critique
             // We use the temperature 0.0 because a critic should be objective and consistent.
-            var executionSettings = new GeminiPromptExecutionSettings
+            var executionSettings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.0,
                 TopP = 0.1

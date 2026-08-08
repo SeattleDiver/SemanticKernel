@@ -4,7 +4,7 @@
 
 A single-shot "code critic" console app. A hard-coded C# snippet — a
 `Calculate(int a, int b)` method with a deliberate unchecked-division bug —
-is embedded inside a rubric-driven prompt and sent to Gemini 2.5 Flash. The
+is embedded inside a rubric-driven prompt and sent to OpenAI's gpt-4.1-mini. The
 model is asked to score the snippet against three fixed criteria
 (reliability, performance, best practices) and to return its verdict in a
 strict `SCORE:` / `PROS:` / `CONS:` / `FIX:` text layout. The program prints
@@ -35,7 +35,7 @@ later in the course.
   0.1` is used because a critic that scores the same code differently each
   run would undermine the whole exercise.
 - **`KernelArguments` as a dual-purpose container** — one `KernelArguments`
-  object carries both the `GeminiPromptExecutionSettings` and the `input`
+  object carries both the `OpenAIPromptExecutionSettings` and the `input`
   template variable.
 - **`kernel.InvokePromptAsync` as a lighter-weight entry point** — unlike
   Days 9/10, this program never touches `IChatCompletionService` directly;
