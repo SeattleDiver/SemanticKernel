@@ -10,16 +10,19 @@ using Microsoft.SemanticKernel;
 
 namespace UniversalProjectManager
 {
+    /// <summary>Entry point that chains GoalRefiner, Planner, and Developer agents through the shared ProjectState blackboard.</summary>
     internal class Program
     {
+        /// <summary>Prompts for a rough project idea, then runs it through the Refiner, Planner, and Developer stages in sequence.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // Initialize the Kernel
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel baseKernel = builder.Build();
 
             Console.WriteLine("Universal Project Manager (UPM) - Phase 2 Implementation");

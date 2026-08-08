@@ -1,22 +1,28 @@
 ﻿using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace UniversalProjectManager
 {
     /// <summary>
-    /// A preliminary agent responsible for taking a raw user input and converting it 
-    /// into a professional, actionable project specification.
+    /// A preliminary agent responsible for taking a raw user input and rewriting it
+    /// into a clear, one-sentence technical goal.
     /// </summary>
     internal class GoalRefinerAgent : IProjectAgent
     {
         private readonly Kernel _kernel;
+
+        /// <inheritdoc/>
         public string Name => "GoalRefiner";
 
-        public GoalRefinerAgent(Kernel kernel) 
+        /// <summary>Creates a goal refiner that uses the given kernel to normalize raw requests.</summary>
+        /// <param name="kernel">The kernel used to invoke the refinement prompt.</param>
+        public GoalRefinerAgent(Kernel kernel)
         {
             _kernel = kernel;
         }
 
+        /// <summary>Rewrites <see cref="ProjectState.OriginalRequest"/> into a one-sentence technical goal and stores it back on the state.</summary>
+        /// <param name="state">The shared project state to read the raw request from and write the refined goal to.</param>
         public async Task ExecuteAsync(ProjectState state)
         {
             // Use the kernel to refine the goal based on the original request
@@ -29,9 +35,9 @@ namespace UniversalProjectManager
                 ".Trim();
 
             // Execute the prompt with a low temperature to ensure deterministic and professional output
-            var settings = new GeminiPromptExecutionSettings 
-            { 
-                Temperature = 0.1 
+            var settings = new OpenAIPromptExecutionSettings
+            {
+                Temperature = 0.1
             };
 
             try
