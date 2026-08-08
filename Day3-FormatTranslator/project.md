@@ -3,7 +3,7 @@
 ## What this project builds
 
 A small console app that acts as a "Transformation Agent": it takes a single
-messy, human-written sentence describing a new hire and asks Gemini to
+messy, human-written sentence describing a new hire and asks OpenAI to
 convert it into a strict JSON object with a fixed set of keys (`FirstName`,
 `LastName`, `Age`, `JobTitle`, `Email`). The program prints the raw JSON
 string the model returns to the console — there's no downstream parser in
@@ -27,7 +27,7 @@ another agent, a plugin, or a tool.
 - **Negative prompting** — explicitly telling the model what *not* to do
   (no markdown fences, no commentary, no explanations) to keep its output
   machine-readable.
-- **`GeminiPromptExecutionSettings`** — configuring model behavior
+- **`OpenAIPromptExecutionSettings`** — configuring model behavior
   (`Temperature`, `TopP`) from C# code instead of prompt text.
 - **Temperature and TopP** — `Temperature = 0.0` and `TopP = 0.1` push the
   model toward its single most probable next token, trading creativity for

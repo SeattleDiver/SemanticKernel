@@ -2,26 +2,29 @@
 // ---------------------------------------------------------------------------
 // A "Transformation Agent" whose only job is turning messy natural language
 // into strict, machine-readable JSON. Demonstrates aggressive negative
-// prompting (telling the model what NOT to do) plus GeminiPromptExecutionSettings
+// prompting (telling the model what NOT to do) plus OpenAIPromptExecutionSettings
 // (Temperature/TopP) to suppress the model's "creativity" so it behaves like
 // a deterministic parser instead of a conversational partner.
 using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace FormatTranslator
 {
+    /// <summary>Entry point that transforms one unstructured sentence into a strict JSON object via a deterministic prompt.</summary>
     class Program
     {
+        /// <summary>Sends a hard-coded sentence through a zero-temperature transformation prompt and prints the resulting JSON.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
-            // Step 1. Init the kernel with Gemini 2.5 flash
+            // Step 1. Init the kernel with an OpenAI chat model
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
-            string modelId = "gemini-2.5-flash";
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
+            string modelId = "gpt-4.1-mini";
 
-            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
             Kernel kernel = builder.Build();
 
             // Step 2. Defind the unstrucured input and the prompt template
@@ -44,7 +47,7 @@ User: Translate this text into JSON:
 {{$input}}
 ";
             // Step 4. Configure Execution Settings to eliminate creativity
-            var executionSettings = new GeminiPromptExecutionSettings()
+            var executionSettings = new OpenAIPromptExecutionSettings()
             {
                 Temperature = 0.0, // Eliminate randomness
                 TopP = 0.1
@@ -58,7 +61,7 @@ User: Translate this text into JSON:
 
             Console.WriteLine("Input Data:");
             Console.WriteLine(unstructuredData);
-            Console.WriteLine("Transformatin natural language to JSON...");
+            Console.WriteLine("Transforming natural language to JSON...");
 
             // Step 6. Execute the prompt. Wrapped in try/catch because this is
             // the network call to the model - a bad key, rate limit, or
