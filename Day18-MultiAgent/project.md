@@ -29,10 +29,12 @@ takes this same two-agent pattern and formalizes it with a reusable
 - **Shared memory as the hand-off mechanism** — both agents read and write to
   the *same* `ChatHistory` object, so the Editor sees exactly what the
   Copywriter wrote, and vice versa, with no explicit data passed between them.
-- **Provider-specific protocol quirks** — Gemini requires strict
-  User → Assistant alternation, so the code inserts an extra
-  `AddUserMessage(...)` "nudge" between agent turns to avoid two consecutive
-  Assistant messages.
+- **Explicit hand-off cues in shared history** — the code inserts an extra
+  `AddUserMessage(...)` "nudge" between agent turns so the next persona
+  knows it's their turn to act. (The original Gemini version of this lesson
+  needed this nudge to satisfy Gemini's strict User → Assistant alternation
+  requirement; OpenAI's API has no such requirement, but the nudge earns
+  its place anyway as the explicit "it's your turn" cue in shared history.)
 - **Manual orchestration with a plain `while` loop** — there is no
   framework-level orchestrator object; the sequencing is 100% visible
   application code.
@@ -44,7 +46,7 @@ takes this same two-agent pattern and formalizes it with a reusable
 ## Cleanup notes
 
 - **Fixed:** Both `chatService.GetChatMessageContentAsync` calls (Copywriter
-  and Editor) ran with no exception handling. A transient Gemini failure
+  and Editor) ran with no exception handling. A transient OpenAI failure
   (rate limit, network blip, etc.) would throw an unhandled exception and
   crash the console app mid-collaboration. Each call is now wrapped in a
   minimal `try/catch` that prints a friendly `[ERROR]` message and breaks out
