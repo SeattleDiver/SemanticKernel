@@ -3,44 +3,50 @@
 // Progresses from the fixed turn-order of Day 18 to the Coordinator Pattern:
 // a meta-agent that reads conversation state and decides, on every
 // iteration, which specialist (Coder/Auditor) should speak next - forced to
-// respond with strict JSON via ResponseMimeType so routing decisions are
+// respond with strict JSON via ResponseFormat so routing decisions are
 // parsed programmatically instead of guessed from free text. Also pairs
 // with RetryHandler.cs, a provider-agnostic resilient HttpClient for
 // transient upstream errors.
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace CoordinatorPro
 {
     // The strict JSON schema the Coordinator must respond with on every turn.
+    /// <summary>The Coordinator's strict-JSON routing decision: its reasoning and which agent should act next.</summary>
     public class RoutingDecision
     {
+        /// <summary>The Coordinator's step-by-step reasoning for this routing decision.</summary>
         [JsonPropertyName("reasoning")]
         public string Reasoning { get; set; } = "";
 
+        /// <summary>Which agent should act next: "CODER", "AUDITOR", or "COMPLETE".</summary>
         [JsonPropertyName("nextAgent")]
         public string NextAgent { get; set; } = "";
     }
 
+    /// <summary>Entry point that routes a Coder/Auditor pair through a model-driven Coordinator instead of a fixed turn order.</summary>
     internal class Program
     {
+        /// <summary>Runs a bounded loop where a Coordinator agent decides which specialist acts next based on conversation state.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
 
             var resilientHttpClient = new HttpClient(new RetryHandler(maxRetries: 5));
 
             // This "meta-agent" episode benefits from a stronger model for its routing
-            // reasoning - swap in a Pro-tier Gemini model here if you want to demonstrate
-            // that. We've also included a resilient HTTP retry handler to deal with
-            // Google's occasional outages (503 Service Unavailable).
-            builder.AddGoogleAIGeminiChatCompletion(
-                modelId: "gemini-2.5-flash",
+            // reasoning - swap in a higher-tier OpenAI model here if you want to
+            // demonstrate that. We've also included a resilient HTTP retry handler to
+            // deal with the provider's occasional outages (503 Service Unavailable).
+            builder.AddOpenAIChatCompletion(
+                modelId: "gpt-4.1-mini",
                 apiKey: apiKey,
                 httpClient: resilientHttpClient);
 
@@ -76,9 +82,9 @@ namespace CoordinatorPro
             int iteration = 0;
             int maxIterations = 8;
 
-            var coordSettings = new GeminiPromptExecutionSettings()
+            var coordSettings = new OpenAIPromptExecutionSettings()
             {
-                ResponseMimeType = "application/json",
+                ResponseFormat = "json_object",
                 Temperature = 0.0
             };
 
@@ -88,7 +94,10 @@ namespace CoordinatorPro
                 // The COORDINATOR decides
                 // ------------------------------------
 
-                // The "Ghost Nudge": Add a temporary user message to satisfy Gemini's alternation rule
+                // The "Ghost Nudge": a temporary user message that tells the Coordinator
+                // persona it's their turn to act. OpenAI doesn't require strict
+                // User/Assistant alternation the way Gemini did, but this still earns
+                // its place as an explicit "evaluate now" cue.
                 var ghostNudge = new ChatMessageContent(AuthorRole.User, "Coordinator, evaluate the state and output the JSON routing decision.");
                 history.Add(ghostNudge);
 
@@ -101,7 +110,7 @@ namespace CoordinatorPro
                 history.RemoveAt(0);
                 history.Remove(ghostNudge);
 
-                // Parse the guaranteed JSON. ResponseMimeType makes malformed JSON rare,
+                // Parse the guaranteed JSON. ResponseFormat makes malformed JSON rare,
                 // but a truncated response or a safety-filter block can still slip
                 // through - catch that instead of letting a JsonException crash the app.
                 RoutingDecision decision;
@@ -143,6 +152,11 @@ namespace CoordinatorPro
             Console.WriteLine(isFinished ? "\nProject lifecycle finished." : "\n Max iterations reached.");
         }
 
+        /// <summary>Swaps in a specialist's persona, invokes it against shared history, prints its output, and appends the reply.</summary>
+        /// <param name="name">The specialist's display name, used in console output.</param>
+        /// <param name="persona">The system-prompt persona to swap in for this call.</param>
+        /// <param name="history">The shared conversation history both specialists and the Coordinator read from.</param>
+        /// <param name="service">The chat completion service to invoke.</param>
         static async Task CallAgent(string name, string persona, ChatHistory history, IChatCompletionService service)
         {
             // Ensure a user message exists betfore this 'Assistant' response

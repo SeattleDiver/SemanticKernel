@@ -8,7 +8,7 @@ then Auditor speaks," a dedicated meta-agent (the Coordinator) looks at the
 conversation state on every loop iteration and decides which specialist —
 a Coder or a Security Auditor — should act next, or whether the workflow is
 done. The Coordinator is forced to answer in strict JSON (via
-`GeminiPromptExecutionSettings.ResponseMimeType = "application/json"`) so its
+`OpenAIPromptExecutionSettings.ResponseFormat = "json_object"`) so its
 routing decision can be deserialized straight into a `RoutingDecision` object
 instead of being guessed from free text. The lesson also pairs this
 orchestration logic with `RetryHandler.cs`, a small provider-agnostic
@@ -31,15 +31,17 @@ upstream failures, not just reason correctly — hence the injectable
 - **The Coordinator (meta-agent) pattern** — a dedicated agent whose only job
   is to read history and pick the next speaker, replacing a fixed turn order
   with dynamic, state-driven routing.
-- **Structured JSON output via `ResponseMimeType`** — forcing the model to
+- **Structured JSON output via `ResponseFormat`** — forcing the model to
   return a JSON payload that deserializes reliably into a typed
   `RoutingDecision`, instead of parsing routing decisions out of free text.
 - **Chain-of-thought before the decision** — the schema asks for a
   `reasoning` field ahead of `nextAgent`, modeling that asking a model to
   explain itself before committing to an answer tends to improve the answer.
-- **The "Ghost Nudge"** — a throwaway `AuthorRole.User` message inserted only
-  to satisfy Gemini's User/Assistant alternation rule, then explicitly
-  removed so it never pollutes the history the specialists see later.
+- **The "Ghost Nudge"** — a throwaway `AuthorRole.User` message inserted to
+  cue the Coordinator persona that it's their turn to act (originally added
+  to satisfy Gemini's User/Assistant alternation rule; OpenAI has no such
+  requirement, but the cue still earns its place), then explicitly removed
+  so it never pollutes the history the specialists see later.
 - **A reusable `CallAgent` helper** — factors the insert-persona / call /
   remove-persona / append-response sequence (duplicated by hand in Day 18)
   into one shared method used identically for the Coder and the Auditor.
@@ -60,12 +62,20 @@ upstream failures, not just reason correctly — hence the injectable
   `[ERROR]` message and ends the run gracefully instead. The docx's Complete
   Code listing and the Step 4 walkthrough prose (which had asserted the
   deserialize call "can be trusted to succeed") were updated to match.
+- **Fixed:** `RetryHandler.SendAsync` resent the exact same `HttpRequestMessage`
+  instance on every retry attempt. .NET marks a request message as sent the
+  moment it's submitted, so a genuine transient failure that triggered a
+  second attempt would throw `InvalidOperationException` instead of actually
+  retrying - a latent bug in the retry design that would surface exactly
+  under the failure conditions this class exists to handle. Fixed by adding
+  a `CloneAsync` helper that builds a fresh request (method, URI, version,
+  headers, and buffered content) for every attempt.
 - **Left as enhancement opportunities (from `missing.md`), not defects:**
   the `RetryHandler`'s lack of `Retry-After` header handling, jitter, and a
   max-delay cap; no `CancellationToken` threading from `Main` into the chat
   calls; no diagnostic logging when the Coordinator returns an unrecognized
-  `nextAgent` value; the model string not actually being a "Pro"-tier Gemini
-  model despite the lesson's title; a minor "betfore" comment typo; and no
-  separate export of the final approved code. These are production-hardening
+  `nextAgent` value; the model string not actually being a higher ("Pro")
+  tier model despite the lesson's title; a minor "betfore" comment typo; and
+  no separate export of the final approved code. These are production-hardening
   or polish items, not things that block or confuse someone following the
   tutorial step by step.
