@@ -20,10 +20,10 @@ namespace Conversationalist
 
             // Step 2: Add a chat completion service to the builder
             // Fetch the API Key from the environment variable and add the service to the builder
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
-            string modelId = "gemini-2.5-flash";
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
+            string modelId = "gpt-4.1-mini";
 
-            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
 
             // Step 3: Build the kernel
             Kernel kernel = builder.Build();

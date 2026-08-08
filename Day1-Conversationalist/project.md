@@ -3,7 +3,7 @@
 ## What this project builds
 
 A continuous, terminal-based chatbot. The program starts an infinite loop
-that reads a line of text from the console, sends it to Google's Gemini
+that reads a line of text from the console, sends it to OpenAI's chat
 model through Semantic Kernel, prints the reply, and waits for the next
 line — until the user types `exit`.
 
@@ -23,12 +23,12 @@ rest of the course.
   configure and construct the `Kernel` before any AI calls can be made.
 - **The Kernel** — the central registry of services, plugins, and
   configuration that the rest of an app's AI code draws on.
-- **AddGoogleAIGeminiChatCompletion** — the connector-registration call
+- **AddOpenAIChatCompletion** — the connector-registration call
   that attaches a specific model and API key to the builder, giving the
   otherwise "empty" kernel a model to talk to.
 - **IChatCompletionService** — the abstraction Semantic Kernel uses to
   talk to chat-based LLMs. Code that depends on this interface instead
-  of on Gemini directly can swap providers by changing a single
+  of on OpenAI directly can swap providers by changing a single
   registration line.
 - **ChatHistory** — an object that stores the ongoing conversation
   (including a system prompt) so the model has context of what was
@@ -41,7 +41,7 @@ rest of the course.
 
 - **Fixed:** the call to `chatCompletionService.GetChatMessageContentAsync(...)`
   was previously unguarded. Any transient failure — a network blip, an
-  invalid/expired API key, or a Gemini rate-limit response — would throw
+  invalid/expired API key, or an OpenAI rate-limit response — would throw
   an unhandled exception and crash the entire chat session, losing the
   whole conversation over a single bad turn. The call is now wrapped in
   a `try/catch` that prints a short, friendly message and lets the loop
