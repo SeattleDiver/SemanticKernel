@@ -9,20 +9,23 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace CodeGenerator
 {
+    /// <summary>Entry point that runs a persona-driven developer agent generating and iteratively refining C# code.</summary>
     class Program
     {
+        /// <summary>Loops on plain-English code requests, generating or revising a single fenced C# code block each turn.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
-            // 1. Setup kernel with Gemini Flash 2.5
+            // 1. Setup kernel with an OpenAI chat model
             var builder = Kernel.CreateBuilder();
-            var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -49,10 +52,10 @@ namespace CodeGenerator
                 if (userRequest.Equals("exit", StringComparison.OrdinalIgnoreCase)) break;
 
                 // 3. Add the request to history
-                chatHistory.AddUserMessage($"Write a c# implemenation for: {userRequest}");
+                chatHistory.AddUserMessage($"Write a c# implementation for: {userRequest}");
                 Console.WriteLine("\n --- Generating code ---\n");
 
-                var settings = new GeminiPromptExecutionSettings
+                var settings = new OpenAIPromptExecutionSettings
                 {
                     Temperature = 0.2,
                     TopP = 0.1
@@ -71,9 +74,19 @@ namespace CodeGenerator
                         // Add to history so the agent can "refactor" or "debug" in the next turn.
                         chatHistory.AddAssistantMessage(response.Content);
                     }
+                    else
+                    {
+                        // No assistant turn to pair with the request - roll it back so
+                        // history doesn't accumulate an orphaned, unanswered user turn.
+                        chatHistory.RemoveAt(chatHistory.Count - 1);
+                    }
                 }
                 catch (Exception ex)
                 {
+                    // Roll back the request that triggered the failure - otherwise it
+                    // stays lodged in history with no reply and gets resent on every
+                    // later turn, which can make a content-filter rejection recur.
+                    chatHistory.RemoveAt(chatHistory.Count - 1);
                     Console.WriteLine($"\n[Error] The request failed: {ex.Message}\nYou can try again or type 'exit'.");
                 }
             }
