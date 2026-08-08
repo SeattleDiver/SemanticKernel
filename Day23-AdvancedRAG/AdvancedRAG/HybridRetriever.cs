@@ -19,12 +19,19 @@ namespace AdvancedRAG
         private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
         private readonly List<Document> _database;
 
+        /// <summary>Creates a retriever over an in-memory document set using the given embedding generator.</summary>
+        /// <param name="embeddingGenerator">The embedding generator used to vectorize queries.</param>
+        /// <param name="database">The in-memory document set to search.</param>
         public HybridRetriever(IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator, List<Document> database)
         {
             _embeddingGenerator = embeddingGenerator;
             _database = database;
         }
 
+        /// <summary>Runs a vector-similarity pass and a keyword pass over the document set and merges the deduplicated results.</summary>
+        /// <param name="query">The user's query.</param>
+        /// <param name="topK">The maximum number of documents to take from each search pass.</param>
+        /// <returns>The deduplicated content of documents found by either search pass.</returns>
         public async Task<IEnumerable<string>> SearchAsync(string query, int topK = 2)
         {
             // 1. Vector Search (Semantic)
@@ -46,7 +53,7 @@ namespace AdvancedRAG
                 .Take(topK);
 
             // 3. Deduplicate and Merge
-            // Combine both lists and remove duplicates so we don't waste Gemini tokens
+            // Combine both lists and remove duplicates so we don't waste model tokens
             var combinedResults = vectorResults
                 .Union(keywordResults)
                 .Select(d => d.Content)
@@ -58,6 +65,9 @@ namespace AdvancedRAG
         /// <summary>
         /// Measures the mathematical similarity between two vectors. Closer to 1.0 means highly similar.
         /// </summary>
+        /// <param name="vecA">The first vector.</param>
+        /// <param name="vecB">The second vector.</param>
+        /// <returns>The cosine similarity between the two vectors, or 0 if either has zero magnitude.</returns>
         private float CalculateCosineSimilarity(ReadOnlySpan<float> vecA, ReadOnlySpan<float> vecB)
         {
             float dot = 0, normA = 0, normB = 0;

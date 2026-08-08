@@ -11,21 +11,24 @@ using Microsoft.SemanticKernel;
 
 namespace AdvancedRAG
 {
+    /// <summary>Entry point that seeds a mock knowledge base and answers one question through a hybrid-search RAG pipeline.</summary>
     internal class Program
     {
+        /// <summary>Vectorizes a mock knowledge base, then retrieves and answers a hardcoded question using hybrid search.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             IKernelBuilder builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
 
-            // Chat model for reeasoning, Embedding model for vectorization
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
-            builder.AddGoogleAIEmbeddingGenerator("gemini-embedding-001", apiKey);
+            // Chat model for reasoning, Embedding model for vectorization
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
+            builder.AddOpenAIEmbeddingGenerator("text-embedding-3-small", apiKey);
 
             Kernel kernel = builder.Build();
 
-            // Exgtract the .NET standard embedding interface from the built Kernel
+            // Extract the .NET standard embedding interface from the built Kernel
             var embeddingGenerator = kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
 
             // 2. Seed the mock database
@@ -39,7 +42,7 @@ namespace AdvancedRAG
             var database = new List<Document>();
             foreach(var text in rawData)
             {
-                // Generate vectors using text-embedding-004
+                // Generate vectors using text-embedding-3-small
                 var embedding = await embeddingGenerator.GenerateAsync(text);
                 Document doc = new Document
                 {

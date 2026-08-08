@@ -4,12 +4,22 @@
 
 A small console app that seeds an in-memory "knowledge base" of three
 sentences about a fictional server rack (the "Alpha-99"), embeds each one
-with a Gemini embedding model, and then answers a single hardcoded question
+with an OpenAI embedding model, and then answers a single hardcoded question
 — "What is the maintenance schedule for the Alpha-99" — by retrieving
-relevant context and feeding it into a grounded, low-temperature Gemini
+relevant context and feeding it into a grounded, low-temperature OpenAI
 prompt. The pipeline is split across four files: `Document` (data),
 `HybridRetriever` (retrieval), `RagAgent` (generation), and `Program.cs`
 (wiring).
+
+## OpenAI migration note
+
+`AddOpenAIEmbeddingGenerator` (like Days 8 and 8a) is marked experimental in
+this SK version and fails the build with `SKEXP0010` unless suppressed;
+`AdvancedRAG.csproj` now sets `<NoWarn>$(NoWarn);SKEXP0010</NoWarn>`. Unlike
+Day 8a's Pinecone lesson, there's no vector-store dimension attribute to keep
+in sync here — `Document.Vector` is just a `ReadOnlyMemory<float>` with no
+declared size, so switching from `gemini-embedding-001` (3072 dimensions) to
+`text-embedding-3-small` (1536 dimensions) needed no other code changes.
 
 ## Why it matters in the series
 

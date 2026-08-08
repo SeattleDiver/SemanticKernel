@@ -9,8 +9,13 @@ namespace AdvancedRAG
     /// </summary>
     internal class Document
     {
+        /// <summary>A unique identifier for this document, generated when the instance is created.</summary>
         public string Id { get; set; } = Guid.NewGuid().ToString();
+
+        /// <summary>The document's raw text content.</summary>
         public string Content { get; set; } = string.Empty;
+
+        /// <summary>The embedding vector for <see cref="Content"/>, used for vector similarity search.</summary>
         public ReadOnlyMemory<float> Vector { get; set; }
     }
 }
