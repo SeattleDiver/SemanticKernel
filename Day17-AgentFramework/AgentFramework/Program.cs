@@ -8,20 +8,23 @@
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace AgentFramework
 {
+    /// <summary>Entry point that runs an interactive travel-planning chat loop driven by a <see cref="ChatCompletionAgent"/>.</summary>
     class Program
     {
+        /// <summary>Builds a persona-configured travel agent and loops on user input, appending each response to shared history.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // 1. Setup the kernel
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY is missing");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY is missing");
 
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             // 2. Create the ChatCompletionAgent
@@ -32,7 +35,7 @@ namespace AgentFramework
                                "Your goal is to help users find the bets destinations based on their budget. " +
                                "Alwasy provide three options: Budget, Mid-range, and Luxury",
                 Kernel = kernel,
-                Arguments = new KernelArguments(new GeminiPromptExecutionSettings {  Temperature = 0.5 })
+                Arguments = new KernelArguments(new OpenAIPromptExecutionSettings {  Temperature = 0.5 })
             };
 
             // 3. Define the conversation

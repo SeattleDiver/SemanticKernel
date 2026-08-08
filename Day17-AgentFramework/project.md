@@ -46,7 +46,7 @@ makes those later, more complex lessons possible.
 
 - **Fixed:** wrapped the `await foreach (var message in
   travelAgent.InvokeAsync(chatHistory))` loop in a `try/catch`. Previously,
-  any failure of the underlying Gemini call (rate limit, network blip,
+  any failure of the underlying OpenAI call (rate limit, network blip,
   invalid key) would throw out of the loop unhandled and crash the entire
   console session, losing the whole conversation. The catch now reports the
   error and lets the `while(true)` loop continue so the user can try again.
