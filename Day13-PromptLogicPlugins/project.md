@@ -3,7 +3,7 @@
 ## What this project builds
 
 A console app that renders a customer-support prompt for a sample "Gold
-tier" user (`Alice`), sends it to Gemini 2.5 Flash via Semantic Kernel, and
+tier" user (`Alice`), sends it to OpenAI's gpt-4.1-mini via Semantic Kernel, and
 prints the AI-generated response. The interesting part isn't the AI call
 itself — it's how the prompt gets assembled: instead of writing loops and
 conditionals directly inside the prompt template string, the template calls
