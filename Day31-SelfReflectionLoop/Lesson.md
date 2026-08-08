@@ -14,9 +14,9 @@ agent's own process, not from a second agent or a human.
 ## Prerequisites
 
 - **Day 7** and **Day 26** — structured JSON output via
-  `GeminiPromptExecutionSettings.ResponseMimeType` / `ResponseSchema`,
-  deserialized defensively into a typed result. This lesson reuses that
-  exact mechanism for the critique step.
+  `OpenAIPromptExecutionSettings.ResponseFormat`, deserialized defensively
+  into a typed result. This lesson reuses that exact mechanism for the
+  critique step.
 - **Day 11 (Critic)** — for contrast. Day 11's critic scores a *fixed,
   external* code snippet once, with no loop and no connection back to
   whoever wrote it. This lesson's critique step targets the agent's *own*
@@ -31,15 +31,15 @@ agent's own process, not from a second agent or a human.
 ## Setup
 
 - .NET 10 SDK
-- A Gemini API key, available via the `GEMINI_API_KEY` environment variable
+- An OpenAI API key, available via the `OPENAI_API_KEY` environment variable
 - NuGet packages (already pinned to match the rest of this series so the
   whole repo builds against one consistent SDK surface):
   - `Microsoft.SemanticKernel` `1.78.0`
-  - `Microsoft.SemanticKernel.Connectors.Google` `1.78.0-alpha`
+  - `Microsoft.SemanticKernel.Connectors.OpenAI` `1.78.0`
 
 ```
 dotnet add package Microsoft.SemanticKernel --version 1.78.0
-dotnet add package Microsoft.SemanticKernel.Connectors.Google --version 1.78.0-alpha
+dotnet add package Microsoft.SemanticKernel.Connectors.OpenAI --version 1.78.0
 ```
 
 ## Core Concepts
@@ -97,6 +97,7 @@ namespace SelfReflectionLoop
         [JsonPropertyName("feedback")]
         public string Feedback { get; set; } = string.Empty;
 
+        [JsonIgnore]
         public bool IsSatisfactory => string.IsNullOrWhiteSpace(Feedback);
     }
 }
@@ -106,12 +107,12 @@ namespace SelfReflectionLoop
 
 The three hats. `DraftAsync` and `ReviseAsync` are free-text generation
 calls; `CritiqueAsync` is the one call constrained to structured JSON via
-`ResponseSchema`:
+`ResponseFormat`:
 
 ```csharp
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace SelfReflectionLoop
 {
@@ -131,7 +132,7 @@ namespace SelfReflectionLoop
                 "Output only the draft itself, with no commentary.");
             history.AddUserMessage(task);
 
-            var settings = new GeminiPromptExecutionSettings { Temperature = 0.7 };
+            var settings = new OpenAIPromptExecutionSettings { Temperature = 0.7 };
             var result = await _chatService.GetChatMessageContentAsync(history, settings);
             return result.Content ?? string.Empty;
         }
@@ -160,11 +161,10 @@ namespace SelfReflectionLoop
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.0,
-                ResponseMimeType = "application/json",
-                ResponseSchema = typeof(SelfCritique)
+                ResponseFormat = typeof(SelfCritique)
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
@@ -199,7 +199,7 @@ namespace SelfReflectionLoop
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings { Temperature = 0.7 };
+            var settings = new OpenAIPromptExecutionSettings { Temperature = 0.7 };
             var result = await _chatService.GetChatMessageContentAsync(history, settings);
             return result.Content ?? draft;
         }
@@ -215,7 +215,7 @@ satisfied or capped:
 ```csharp
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace SelfReflectionLoop
 {
@@ -225,11 +225,11 @@ namespace SelfReflectionLoop
 
         static async Task Main(string[] args)
         {
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
 
             var builder = Kernel.CreateBuilder();
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -299,13 +299,23 @@ itself, or run out of patience with itself.
 version of this lesson had `SelfCritique` ask for two fields -
 `isSatisfactory` (bool) and `feedback` (string), mirroring how the schema
 reads out loud. Forcing an unsatisfactory first draft to test the revision
-path exposed a real bug: the model reliably returned
-`{"isSatisfactory": false}` with no `feedback` field at all - a complete,
-valid JSON object, just missing the one piece of information the loop
-actually needed to act on. The fix - also used in Day 38 for the same
-failure shape - was to drop the bool and derive it from whether `feedback`
-came back empty. One field can't be partially missing in a way that
-silently breaks the loop; two fields, it turns out, can.
+path exposed a real bug against Gemini, the provider this lesson originally
+shipped against: the model reliably returned `{"isSatisfactory": false}`
+with no `feedback` field at all - a complete, valid JSON object, just
+missing the one piece of information the loop actually needed to act on.
+The fix - also used in Day 38 for the same failure shape - was to drop the
+bool and derive it from whether `feedback` came back empty. One field
+can't be partially missing in a way that silently breaks the loop; two
+fields, it turns out, can. The series has since moved to OpenAI, whose
+`ResponseFormat = typeof(T)` structured-output mode enforces *every*
+serializable field in the schema as required - including computed,
+get-only properties like `IsSatisfactory` picked up by reflection, not
+just the ones with a `[JsonPropertyName]`. Left unguarded, that would have
+reintroduced a two-field schema by accident and forced the model to emit
+an undocumented `IsSatisfactory` value on every call, quietly defeating
+the whole point of this section. `SelfCritique.IsSatisfactory` is marked
+`[JsonIgnore]` specifically to keep the wire schema down to the one field
+this design actually depends on.
 
 ## Expected Result
 

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace SelfReflectionLoop
 {
@@ -26,7 +26,7 @@ namespace SelfReflectionLoop
                 "Output only the draft itself, with no commentary.");
             history.AddUserMessage(task);
 
-            var settings = new GeminiPromptExecutionSettings { Temperature = 0.7 };
+            var settings = new OpenAIPromptExecutionSettings { Temperature = 0.7 };
             var result = await _chatService.GetChatMessageContentAsync(history, settings);
             return result.Content ?? string.Empty;
         }
@@ -58,11 +58,10 @@ namespace SelfReflectionLoop
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.0,
-                ResponseMimeType = "application/json",
-                ResponseSchema = typeof(SelfCritique)
+                ResponseFormat = typeof(SelfCritique)
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
@@ -100,7 +99,7 @@ namespace SelfReflectionLoop
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings { Temperature = 0.7 };
+            var settings = new OpenAIPromptExecutionSettings { Temperature = 0.7 };
             var result = await _chatService.GetChatMessageContentAsync(history, settings);
             return result.Content ?? draft;
         }
