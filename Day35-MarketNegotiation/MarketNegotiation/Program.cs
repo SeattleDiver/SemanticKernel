@@ -70,28 +70,27 @@ namespace MarketNegotiation
             {
                 Console.WriteLine($"=== Round {round} ===");
 
-                // Each participant's call is isolated: a single dropped connection shouldn't
-                // crash the whole round - it should just carry that participant's last known
-                // bid forward instead.
+                // Bids are collected one at a time rather than concurrently - a sealed-bid
+                // round doesn't require simultaneity, and each call is still isolated: a
+                // single dropped connection shouldn't crash the round, just carry that
+                // participant's last known bid forward instead.
                 var bidsByName = new Dictionary<string, Bid>();
-                var roundTasks = participants.Select(async p =>
+                foreach (var p in participants)
                 {
+                    Bid bid;
                     try
                     {
-                        return (p.Name, await negotiator.SubmitBidAsync(p, TotalBudget, marketSignal));
+                        bid = await negotiator.SubmitBidAsync(p, TotalBudget, marketSignal);
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"  [WARN] {p.Name}'s bid call failed, reusing their last known bid: {ex.Message}");
-                        return (p.Name, lastKnownBids[p.Name]);
+                        bid = lastKnownBids[p.Name];
                     }
-                });
 
-                foreach (var (name, bid) in await Task.WhenAll(roundTasks))
-                {
-                    bidsByName[name] = bid;
-                    lastKnownBids[name] = bid;
-                    Console.WriteLine($"  {name}: ${bid.RequestedAmount} - {bid.Justification}");
+                    bidsByName[p.Name] = bid;
+                    lastKnownBids[p.Name] = bid;
+                    Console.WriteLine($"  {p.Name}: ${bid.RequestedAmount} - {bid.Justification}");
                 }
 
                 (bool fits, decimal total) = MarketCoordinator.CheckFit(bidsByName, TotalBudget);
