@@ -5,7 +5,7 @@
 A console app that reimplements, entirely by hand, the same "model calls a
 tool to gather information" pattern used throughout the series — but without
 Semantic Kernel's automatic tool execution. It sets `ToolCallBehavior` to
-`GeminiToolCallBehavior.EnableKernelFunctions` (instead of the usual
+`ToolCallBehavior.EnableKernelFunctions` (instead of the usual
 `AutoInvokeKernelFunctions`), which lets the model *request* a function call
 without the SDK actually running it. The program then owns every remaining
 step itself: it inspects the model's response for a `FunctionCallContent`,
@@ -49,7 +49,7 @@ reuse this same bounded-loop idea.
 
 - **Fixed:** the loop checked `if (string.IsNullOrEmpty(result.Content))
   continue;` *before* looking at `result.Items` for tool-call requests.
-  Gemini frequently returns an empty `Content` string on turns where it is
+  Models frequently return an empty `Content` string on turns where they are
   only requesting a function call (no narrated text), so this ordering meant
   a genuine tool-call request could be silently skipped every iteration,
   leaving the tool never invoked and the loop quietly spinning until the

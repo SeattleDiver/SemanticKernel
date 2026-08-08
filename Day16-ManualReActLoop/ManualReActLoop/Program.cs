@@ -8,17 +8,21 @@
 // auto-invocation (used everywhere else in the series) does under the hood.
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
 
 namespace ManualReActLoop
 {
+    /// <summary>Stateful native plugin exposing a mock knowledge-base search and a running count of research steps taken.</summary>
     public class ResearchPlugin
     {
         private int _stepCount = 0;
 
+        /// <summary>Searches the internal knowledge base for technical specs matching the query.</summary>
+        /// <param name="query">The search query.</param>
+        /// <returns>The matching spec, or "Data not found." if the query doesn't match the mock knowledge base.</returns>
         [KernelFunction("SearchDatabase")]
         [Description("Searches the internal knowledge base for technical specs.")]
         public string Search(string query)
@@ -27,18 +31,23 @@ namespace ManualReActLoop
             return query.Contains("Battery", StringComparison.OrdinalIgnoreCase) ? "The Quantum-X battery lasts 24 hours." : "Data not found.";
         }
 
+        /// <summary>Returns how many research steps have been taken so far.</summary>
+        /// <returns>A message stating the total number of <see cref="Search"/> calls made.</returns>
         [KernelFunction("GetStepCount")]
         [Description("Returns how many research steps have been taken.")]
         public string GetCount() => $"Total steps taken: {_stepCount}";
     }
 
+    /// <summary>Entry point that hand-rolls a ReAct (Thought/Action/Observation) loop instead of relying on SK auto-invocation.</summary>
     class Program
     {
+        /// <summary>Runs up to 5 manual request/execute/observe iterations, invoking model-requested tools by hand each turn.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             var builder = Kernel.CreateBuilder();
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new Exception("Missing key");
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? throw new Exception("Missing key");
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
 
             // 1. Add stateful object
             var myResearchTool = new ResearchPlugin();
@@ -62,11 +71,11 @@ namespace ManualReActLoop
             for (int i = 0; i < 5; i++)
             {
                 // Request next step from AI (Enable Call but DON'T Auto-Invoke)
-                var settings = new GeminiPromptExecutionSettings { ToolCallBehavior = GeminiToolCallBehavior.EnableKernelFunctions };
+                var settings = new OpenAIPromptExecutionSettings { ToolCallBehavior = ToolCallBehavior.EnableKernelFunctions };
                 var result = await chatService.GetChatMessageContentAsync(history, settings, kernel);
 
-                // 3. Check for a tool-call request BEFORE looking at Content. Gemini
-                // often returns an empty Content string when it is requesting a
+                // 3. Check for a tool-call request BEFORE looking at Content. Models
+                // often return an empty Content string when they are requesting a
                 // function call instead of talking - checking Content first (and
                 // skipping the turn when it's empty) would silently ignore that
                 // function call forever and stall the loop until the iteration cap.
