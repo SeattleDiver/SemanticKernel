@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace LLMFanIn
 {
@@ -46,11 +46,10 @@ namespace LLMFanIn
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.2,
-                ResponseMimeType = "application/json",
-                ResponseSchema = typeof(SynthesisResult)
+                ResponseFormat = typeof(SynthesisResult)
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);

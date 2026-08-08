@@ -1,5 +1,5 @@
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace LLMFanIn
 {
@@ -24,7 +24,7 @@ namespace LLMFanIn
                 "You are a technical writer. Answer the task directly, with no commentary.");
             history.AddUserMessage(task);
 
-            var settings = new GeminiPromptExecutionSettings { Temperature = 0.9 };
+            var settings = new OpenAIPromptExecutionSettings { Temperature = 0.9 };
             var result = await _chatService.GetChatMessageContentAsync(history, settings);
             return result.Content ?? string.Empty;
         }

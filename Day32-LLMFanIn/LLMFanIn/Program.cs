@@ -1,7 +1,7 @@
 // Day 32: LLM-Based Fan-In
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace LLMFanIn
 {
@@ -17,11 +17,11 @@ namespace LLMFanIn
         /// </summary>
         static async Task Main(string[] args)
         {
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
 
             var builder = Kernel.CreateBuilder();
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();

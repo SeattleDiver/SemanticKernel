@@ -17,7 +17,7 @@ draft alone.
   results. This lesson reuses that concurrency idea but replaces Day 7's
   deterministic LINQ aggregation with a model call.
 - **Day 31 (Self-Reflection Loop)** — structured JSON output via
-  `ResponseSchema`, and the convention of giving a synthesis/judgment step
+  `ResponseFormat`, and the convention of giving a synthesis/judgment step
   its own low temperature while generation runs hot. The same split is used
   here.
 - Comfort with `Task.WhenAll` for concurrent async calls in C#.
@@ -25,14 +25,14 @@ draft alone.
 ## Setup
 
 - .NET 10 SDK
-- A Gemini API key, available via the `GEMINI_API_KEY` environment variable
+- An OpenAI API key, available via the `OPENAI_API_KEY` environment variable
 - NuGet packages:
   - `Microsoft.SemanticKernel` `1.78.0`
-  - `Microsoft.SemanticKernel.Connectors.Google` `1.78.0-alpha`
+  - `Microsoft.SemanticKernel.Connectors.OpenAI` `1.78.0`
 
 ```
 dotnet add package Microsoft.SemanticKernel --version 1.78.0
-dotnet add package Microsoft.SemanticKernel.Connectors.Google --version 1.78.0-alpha
+dotnet add package Microsoft.SemanticKernel.Connectors.OpenAI --version 1.78.0
 ```
 
 ## Core Concepts
@@ -99,7 +99,7 @@ output, which is what keeps the fan-out calls genuinely independent:
 
 ```csharp
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace LLMFanIn
 {
@@ -118,7 +118,7 @@ namespace LLMFanIn
                 "You are a technical writer. Answer the task directly, with no commentary.");
             history.AddUserMessage(task);
 
-            var settings = new GeminiPromptExecutionSettings { Temperature = 0.9 };
+            var settings = new OpenAIPromptExecutionSettings { Temperature = 0.9 };
             var result = await _chatService.GetChatMessageContentAsync(history, settings);
             return result.Content ?? string.Empty;
         }
@@ -134,7 +134,7 @@ told explicitly what "synthesis" does and does not mean:
 ```csharp
 using System.Text.Json;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace LLMFanIn
 {
@@ -174,11 +174,10 @@ namespace LLMFanIn
             var history = new ChatHistory();
             history.AddUserMessage(prompt);
 
-            var settings = new GeminiPromptExecutionSettings
+            var settings = new OpenAIPromptExecutionSettings
             {
                 Temperature = 0.2,
-                ResponseMimeType = "application/json",
-                ResponseSchema = typeof(SynthesisResult)
+                ResponseFormat = typeof(SynthesisResult)
             };
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
@@ -210,7 +209,7 @@ Fan out N drafts concurrently, then fan them in through one reducer call:
 ```csharp
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace LLMFanIn
 {
@@ -220,11 +219,11 @@ namespace LLMFanIn
 
         static async Task Main(string[] args)
         {
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
 
             var builder = Kernel.CreateBuilder();
-            builder.AddGoogleAIGeminiChatCompletion("gemini-2.5-flash", apiKey);
+            builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel kernel = builder.Build();
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -259,7 +258,7 @@ namespace LLMFanIn
 ## Explanation
 
 `Task.WhenAll` over three `GenerateDraftAsync` calls is the entire fan-out
-mechanism — three HTTP round-trips to Gemini happen concurrently, not
+mechanism — three HTTP round-trips to OpenAI happen concurrently, not
 sequentially, which is the actual "parallelization" half of the pattern
 name. Nothing about that step is agentic; it's the same concurrency
 primitive you'd use to fan out any three independent async calls.
