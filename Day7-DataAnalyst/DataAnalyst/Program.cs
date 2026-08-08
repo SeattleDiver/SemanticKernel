@@ -1,8 +1,8 @@
 // Day 7: The Data Analyst
 // ---------------------------------------------------------------------------
 // An extraction agent: instead of asking the model for a conversational
-// reply, it forces every response into a fixed JSON shape via Gemini's
-// ResponseMimeType/ResponseSchema, then deserializes that JSON straight into
+// reply, it forces every response into a fixed JSON shape via OpenAI's
+// structured-output ResponseFormat, then deserializes that JSON straight into
 // a typed FeedbackAnalysis object with System.Text.Json. Doing this across a
 // small batch of messy, free-text customer feedback turns the model's output
 // into something a normal C# program can aggregate and report on - the thing
@@ -14,48 +14,55 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace DataAnalyst
 {
     // The fixed schema every extraction must match. JsonPropertyName keeps the
     // wire format lowerCamelCase (what we ask the model for in the prompt)
     // while the C# side stays PascalCase.
+    /// <summary>Fixed shape every feedback extraction must match: sentiment, product, a one-line summary, and a priority score.</summary>
     public class FeedbackAnalysis
     {
+        /// <summary>The feedback's overall sentiment: "Positive", "Neutral", or "Negative".</summary>
         [JsonPropertyName("sentiment")]
         public string Sentiment { get; set; } = "Unknown";
 
+        /// <summary>The product or feature area the feedback discusses, or "Unknown" if unclear.</summary>
         [JsonPropertyName("product")]
         public string Product { get; set; } = "Unknown";
 
+        /// <summary>A one-sentence, neutral summary of the feedback.</summary>
         [JsonPropertyName("summary")]
         public string Summary { get; set; } = "";
 
+        /// <summary>An urgency score from 1 (no action needed) to 5 (urgent, needs immediate attention).</summary>
         [JsonPropertyName("priority")]
         public int Priority { get; set; }
     }
 
+    /// <summary>Entry point that extracts structured sentiment/priority data from a batch of raw customer feedback.</summary>
     class Program
     {
+        /// <summary>Analyzes each feedback entry into a typed <see cref="FeedbackAnalysis"/> and prints an aggregate report.</summary>
+        /// <param name="args">Unused command-line arguments.</param>
         static async Task Main(string[] args)
         {
             // Step 1: Initialize the Kernel
-            string apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-                ?? throw new Exception("GEMINI_API_KEY environment variable is not set.");
-            string modelId = "gemini-2.5-flash";
+            string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new Exception("OPENAI_API_KEY environment variable is not set.");
+            string modelId = "gpt-4.1-mini";
 
             var builder = Kernel.CreateBuilder();
-            builder.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
             Kernel kernel = builder.Build();
 
             // Step 2: Force every call to return JSON matching FeedbackAnalysis.
-            // ResponseSchema constrains the field names/types the model can
-            // return; ResponseMimeType is what actually turns JSON mode on.
-            var executionSettings = new GeminiPromptExecutionSettings
+            // Passing the type directly to ResponseFormat auto-generates a JSON
+            // schema and turns on OpenAI's Structured Outputs mode.
+            var executionSettings = new OpenAIPromptExecutionSettings
             {
-                ResponseMimeType = "application/json",
-                ResponseSchema = typeof(FeedbackAnalysis),
+                ResponseFormat = typeof(FeedbackAnalysis),
                 Temperature = 0.0
             };
 
@@ -110,10 +117,10 @@ FEEDBACK:
                 }
 
                 // Step 5: Deserialize the guaranteed-JSON response into our typed
-                // object. ResponseSchema makes malformed JSON rare, but a
-                // safety-filter block or truncated response can still slip
-                // through, so this is guarded the same way Day 19's Coordinator
-                // guards its own JSON parsing.
+                // object. ResponseFormat makes malformed JSON rare, but a
+                // content-filter finish reason or truncated response can still
+                // slip through, so this is guarded the same way Day 19's
+                // Coordinator guards its own JSON parsing.
                 try
                 {
                     var analysis = JsonSerializer.Deserialize<FeedbackAnalysis>(result.ToString())

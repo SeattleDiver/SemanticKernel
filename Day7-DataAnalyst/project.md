@@ -3,11 +3,10 @@
 ## What this project builds
 
 An extraction agent. A small batch of raw, messy customer-feedback
-strings — the kind a support inbox actually receives — is fed to Gemini
+strings — the kind a support inbox actually receives — is fed to OpenAI
 one at a time, but instead of asking for a conversational reply, every
 call forces the model to answer in a fixed JSON shape (sentiment,
-product, one-line summary, priority) via `ResponseMimeType` and
-`ResponseSchema`. Each response is deserialized into a typed
+product, one-line summary, priority) via `ResponseFormat`. Each response is deserialized into a typed
 `FeedbackAnalysis` object with `System.Text.Json`, and the run finishes
 with a small aggregate report (counts by sentiment, a list of anything
 flagged urgent) built entirely from LINQ over the typed results.
@@ -18,20 +17,18 @@ Every earlier lesson treats the model's output as text to print. This
 is the first lesson that treats the model's output as *data* — the
 payoff being that a C# program can filter, group, and count it the
 moment it comes back, instead of a human reading through free text
-looking for the negative reviews. It also introduces `ResponseSchema`,
+looking for the negative reviews. It also introduces `ResponseFormat`,
 which constrains the model to a specific object shape at the API level,
 a stronger guarantee than the prompt-only JSON formatting used later in
 Day 19's `RoutingDecision`.
 
 ## Core concepts taught
 
-- **`ResponseMimeType = "application/json"`** — switches the Gemini
-  connector into JSON mode, so the model's response is guaranteed-valid
-  JSON rather than JSON-shaped prose that has to be extracted from a
+- **`ResponseFormat`** — passing a C# `Type` (`typeof(FeedbackAnalysis)`)
+  directly turns on OpenAI's Structured Outputs mode and auto-generates a
+  JSON schema constraining the model's response to that type's fields and
+  types, rather than JSON-shaped prose that has to be extracted from a
   larger reply.
-- **`ResponseSchema`** — passing a C# `Type` (`typeof(FeedbackAnalysis)`)
-  to constrain the JSON to a specific set of fields and types, on top of
-  just turning JSON mode on.
 - **`System.Text.Json` deserialization to a typed object** —
   `JsonSerializer.Deserialize<FeedbackAnalysis>(...)`, with
   `[JsonPropertyName]` bridging the model's lowerCamelCase field names
@@ -48,11 +45,11 @@ Day 19's `RoutingDecision`.
 
 ## Implementation notes
 
-- The knowledge that `ResponseSchema` accepts a plain C# `Type` (rather
+- The knowledge that `ResponseFormat` accepts a plain C# `Type` (rather
   than a hand-written JSON Schema string) and that
-  `GeminiPromptExecutionSettings` exposes it at all was confirmed by
-  compiling against the exact package versions this repo already pins
-  (`Microsoft.SemanticKernel.Connectors.Google` 1.78.0-alpha) — it is not
+  `OpenAIPromptExecutionSettings` exposes it at all was confirmed by
+  reading the XML docs shipped with the exact package version this repo
+  pins (`Microsoft.SemanticKernel.Connectors.OpenAI` 1.78.0) — it is not
   assumed from memory.
 - The batch loop calls the model once per feedback entry rather than
   asking for a JSON array of all four analyses in one call. A single
