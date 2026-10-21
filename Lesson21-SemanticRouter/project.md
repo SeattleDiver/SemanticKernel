@@ -32,8 +32,10 @@ multi-agent lessons build on.
   model commits to a category, which measurably improves classification
   accuracy for free.
 - **Kernel isolation via `Kernel.Clone()`** — `TechSupportAgent` and
-  `BillingAgent` each clone the shared `baseKernel`, which keeps the same AI
-  service registrations but starts with an empty plugin collection. Each
+  `BillingAgent` each clone the shared `baseKernel`. A clone keeps the same AI
+  service registrations and gets its own copy of the base kernel's plugin
+  collection; because `baseKernel` has no plugins, each clone starts empty,
+  and plugins added to one clone never reach the other. Each
   agent registers only its own `[KernelFunction]`, so tool isolation is
   structural (the method literally isn't loaded), not just a prompt
   instruction a user could argue around.

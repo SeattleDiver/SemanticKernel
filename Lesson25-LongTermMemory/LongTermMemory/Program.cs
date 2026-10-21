@@ -61,11 +61,11 @@ namespace LongTermMemory
                     Console.WriteLine($"\n[ERROR] The agent could not respond: {ex.Message}");
                     continue;
                 }
-                Console.WriteLine($"\nAI {response}");
+                Console.WriteLine($"\nAI: {response}");
 
-                // Step B: Fire-and-forget extraction in the background
-                // We use await here to ensure it finishes before the next loop, 
-                // but structurally this operates as a background processor.
+                // Step B: Extract and save any new fact from this turn.
+                // We await it so the fact is saved before the next loop, which means
+                // the very next reply can already use it.
                 await memoryManager.ExtractAndSaveFactAsync(input);
                 Console.WriteLine();
             }

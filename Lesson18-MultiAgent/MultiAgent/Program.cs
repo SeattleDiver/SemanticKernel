@@ -32,7 +32,7 @@ namespace MultiAgent
             IChatCompletionService chatService = kernel.GetRequiredService<IChatCompletionService>();
 
             // 3. Define the Specialist Personas
-            string copywriterPersona = "You are a creative copywriter.  Write a punch 5-word slogan for the product provided.";
+            string copywriterPersona = "You are a creative copywriter.  Write a punchy 5-word slogan for the product provided.";
             string editorPersona = "You are a brand editor.  Review the slogan.  If it's perfect, say 'APPROVED'.  If not, provide one suggestion";
 
             // 4. Shared conversation history

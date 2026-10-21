@@ -31,16 +31,16 @@ namespace AgentFramework
             ChatCompletionAgent travelAgent = new()
             {
                 Name = "TravelAssistant",
-                Instructions = "You are a world-class travel planner." +
-                               "Your goal is to help users find the bets destinations based on their budget. " +
-                               "Alwasy provide three options: Budget, Mid-range, and Luxury",
+                Instructions = "You are a world-class travel planner. " +
+                               "Your goal is to help users find the best destinations based on their budget. " +
+                               "Always provide three options: Budget, Mid-range, and Luxury",
                 Kernel = kernel,
                 Arguments = new KernelArguments(new OpenAIPromptExecutionSettings {  Temperature = 0.5 })
             };
 
             // 3. Define the conversation
             ChatHistory chatHistory = new ChatHistory();
-            Console.WriteLine("Tarvel Agent Framework Initialized");
+            Console.WriteLine("Travel Agent Framework Initialized");
 
             while(true)
             {

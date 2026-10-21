@@ -57,6 +57,9 @@ for them here.
   lesson, so it now prints a friendly `Agent run failed: ...` message instead.
   The `Program.cs` code and the docx's Complete Code / Program.cs listing were
   both updated to match.
+- Moved `TimePlugin` and `WeatherPlugin` out of `Program.cs` into their own
+  `TimePlugin.cs` and `WeatherPlugin.cs` files, following the series'
+  one-class-per-file rule.
 - Everything else flagged in the prior analysis (`missing.md`) — no
   interactive question loop, the hard-coded/fake weather logic, no
   cancellation token or timeout, no cap on auto-invoked tool round trips, and

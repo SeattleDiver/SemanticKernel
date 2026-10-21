@@ -10,18 +10,6 @@ using Microsoft.SemanticKernel;
 
 namespace RagAgent
 {
-    // A single knowledge-base entry: the original text plus its embedding
-    // vector, so similarity can be computed without re-embedding on every query.
-    /// <summary>A single knowledge-base entry: the source text plus its precomputed embedding vector.</summary>
-    public class KnowledgeDocument
-    {
-        /// <summary>The document's original plain-text content.</summary>
-        public string Text { get; set; }
-
-        /// <summary>The embedding vector for <see cref="Text"/>, used to compute similarity without re-embedding on every query.</summary>
-        public ReadOnlyMemory<float> Vector { get; set; }
-    }
-
     /// <summary>Entry point that runs a hand-rolled RAG pipeline: embed, retrieve by cosine similarity, then answer grounded on the match.</summary>
     class Program
     {
@@ -49,7 +37,7 @@ namespace RagAgent
             {
                 "The company WiFi password is 'guest2026!'.  It changes every Monday.",
                 "Employees are allowed 3 weeks of paid time off per year, which rolls over.",
-                "The office building is closed on federal holidays, and keycad access is disabled.",
+                "The office building is closed on federal holidays, and keycard access is disabled.",
                 "For IT support issues, please submit a ticket to the help desk at helpdesk@company.com.  Do not call the IT desk directly",
                 "The microwave in the 2nd-floor breakroom is strictly for reheating food.  Do not use it to cook raw food."
             };
@@ -90,7 +78,7 @@ namespace RagAgent
 
             // Step 8: Build the RAG prompt
             string promptTemplate = @"
-You are a helpful company librarian.  Answer the user's question using ONLY the provide context.
+You are a helpful company librarian.  Answer the user's question using ONLY the provided context.
 If the context does not contain the answer, say 'I don't have enough information to answer that question.'  
 Do not make up an answer.
 Do not use outside knowledge.  

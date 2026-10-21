@@ -1,5 +1,5 @@
 ﻿// ------------------------------------------------------------------------------------------------
-// Day 29: Capstone Implementation (Orchestration & UI)
+// Day 29: Capstone Implementation (Orchestration & Review Loop)
 // Project Overview
 // In Day 29, we replace Day 28's fixed, hand-written agent sequence with a real orchestrator.
 // A new ProjectOrchestrator loops the GoalRefiner, Planner, Developer, and a new ReviewerAgent
@@ -25,7 +25,7 @@ namespace UniversalProjectManager
             builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel baseKernel = builder.Build();
 
-            Console.WriteLine("Universal Project Manager (UPM) - Phase 3 Orchestration");
+            Console.WriteLine("Universal Project Manager (UPM) - Capstone I Orchestration");
 
             // Initialize Shared State
             ProjectState projectState = new ProjectState();

@@ -13,13 +13,15 @@ follow-up turns, just one prompt in and one structured-looking answer out.
 
 ## Why it matters in the series
 
-This lesson is a deliberate stepping stone toward real structured output.
-Days 19 and 21 later introduce actual JSON-schema-enforced responses; Day 11
-shows the "poor man's" version first — getting a consistent, parseable-*looking*
-shape purely through careful prompt wording, with nothing in the SDK
-enforcing that shape. Seeing the text-format approach (and its fragility)
-before the JSON approach gives students a concrete before/after contrast
-later in the course.
+This lesson is a deliberate contrast with real structured output. Day 7
+already introduced SDK-enforced JSON (`ResponseFormat = typeof(FeedbackAnalysis)`,
+which turns on OpenAI's JSON-schema Structured Outputs), and Days 19 and 21
+reuse `ResponseFormat` in JSON mode for routing decisions. Day 11 shows the
+"poor man's" version — getting a consistent, parseable-*looking* shape
+purely through careful prompt wording, with nothing in the SDK enforcing
+that shape. Seeing the text-format approach (and its fragility) next to
+the `ResponseFormat` approach gives students a concrete side-by-side
+contrast.
 
 ## Core concepts taught
 

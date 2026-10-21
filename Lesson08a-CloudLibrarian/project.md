@@ -39,10 +39,15 @@ is closer to what a production RAG system actually looks like.
 
 ## Core concepts taught
 
-- **`IVectorStore` / `PineconeVectorStore`** — Semantic Kernel's
-  provider-agnostic vector store abstraction, backed here by Pinecone.
-  The same `KnowledgeRecord` class and calling code would work against
-  a different connector (Qdrant, Azure AI Search, etc.) with only the
+- **`PineconeVectorStore`** — the Pinecone connector for
+  `Microsoft.Extensions.VectorData`'s provider-agnostic abstraction (the
+  abstract `VectorStore` and `VectorStoreCollection<TKey, TRecord>`
+  classes; the older `IVectorStore` interface no longer exists in the
+  version this lesson uses). The code constructs `PineconeVectorStore`
+  directly, but everything after that line — `GetCollection`,
+  `UpsertAsync`, `SearchAsync` — is the shared surface, so the same
+  `KnowledgeRecord` class and calling code would work against a
+  different connector (Qdrant, Azure AI Search, etc.) with only the
   store construction line changed.
 - **Vector store record attributes** — `[VectorStoreKey]`,
   `[VectorStoreData]`, and `[VectorStoreVector(dimensions, ...)]` from
@@ -92,8 +97,8 @@ is closer to what a production RAG system actually looks like.
   If Pinecone connectivity becomes unreliable in a future SDK bump, the
   fix is swapping the vector store construction (an actively maintained
   connector such as Qdrant or Azure AI Search) — the `KnowledgeRecord`
-  class and all retrieval logic downstream of `IVectorStore` would not
-  need to change.
+  class and all retrieval logic downstream of the store construction
+  line would not need to change.
 - **No index region/cloud configuration is set explicitly** —
   `EnsureCollectionExistsAsync()` is called with defaults. If it fails
   in your Pinecone project, check the dashboard for your account's

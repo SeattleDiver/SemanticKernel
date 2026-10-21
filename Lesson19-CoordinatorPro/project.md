@@ -55,7 +55,7 @@ upstream failures, not just reason correctly — hence the injectable
 
 - **Fixed:** `Program.cs` wrapped the Coordinator's
   `JsonSerializer.Deserialize<RoutingDecision>(...)` call in a `try/catch`.
-  Although `ResponseMimeType = "application/json"` makes malformed JSON rare,
+  Although `ResponseFormat = "json_object"` makes malformed JSON rare,
   a truncated response or a safety-filter block could still produce content
   that isn't valid JSON, and an uncaught `JsonException` there would crash
   the whole console session mid-workflow. The catch block now prints a clear
@@ -70,12 +70,20 @@ upstream failures, not just reason correctly — hence the injectable
   under the failure conditions this class exists to handle. Fixed by adding
   a `CloneAsync` helper that builds a fresh request (method, URI, version,
   headers, and buffered content) for every attempt.
+- **Fixed:** each clone was wrapped in `using var`, so it was disposed the
+  moment `SendAsync` returned, while the returned response still referenced
+  it through `response.RequestMessage`. The clone now stays alive with the
+  response it produced; only a failed attempt that is about to be retried
+  disposes its response and clone (and a clone whose send throws is disposed
+  before the exception propagates).
+- **Fixed:** `RoutingDecision` moved out of `Program.cs` into its own
+  `RoutingDecision.cs`, and a "betfore" comment typo was corrected.
 - **Left as enhancement opportunities (from `missing.md`), not defects:**
   the `RetryHandler`'s lack of `Retry-After` header handling, jitter, and a
   max-delay cap; no `CancellationToken` threading from `Main` into the chat
   calls; no diagnostic logging when the Coordinator returns an unrecognized
   `nextAgent` value; the model string not actually being a higher ("Pro")
-  tier model despite the lesson's title; a minor "betfore" comment typo; and
+  tier model despite the lesson's title; and
   no separate export of the final approved code. These are production-hardening
   or polish items, not things that block or confuse someone following the
   tutorial step by step.

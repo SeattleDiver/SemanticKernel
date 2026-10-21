@@ -6,43 +6,13 @@
 // clearest demonstration in the series of real tool *selection*, not just
 // tool *execution*.
 using System;
-using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace MultiToolAgent
 {
-    // 1. Define multiple plugins
-    /// <summary>Native plugin exposing the current local time as a Semantic Kernel tool.</summary>
-    public class TimePlugin
-    {
-        /// <summary>Gets the current local time.</summary>
-        /// <returns>The current local date and time, formatted as a full date/time string.</returns>
-        [KernelFunction("GetLocalTime")]
-        [Description("Gets the current local time.")]
-        public string GetTime()
-        {
-            Console.WriteLine("[EXECUTING TOOL] GetLocalTime.");
-            return DateTime.Now.ToString("F");
-        }
-    }
-
-    /// <summary>Native plugin exposing a (simulated) current-weather lookup as a Semantic Kernel tool.</summary>
-    public class WeatherPlugin
-    {
-        /// <summary>Gets the current weather for a specific city.</summary>
-        /// <param name="city">The city name to look up weather for.</param>
-        /// <returns>A short weather description for the requested city.</returns>
-        [KernelFunction("GetWeather")]
-        [Description("Gets the current weather for a specific city.")]
-        public string GetWeather([Description("The city name")] string city)
-        {
-            Console.WriteLine($"[EXECUTING TOOL] GetWeather: City {city}.");
-            return city.Contains("London") ? "15°C and Rainy" : "22°C and Sunny";
-        }
-    }
-
+    // 1. The plugins are defined in their own files: TimePlugin.cs and WeatherPlugin.cs.
     /// <summary>Entry point that registers two independent plugins and lets the model decide which one(s) a request needs.</summary>
     class Program
     {

@@ -2,11 +2,11 @@
 
 ## What this project builds
 
-This is day 2 of the 4-day Universal Project Manager (UPM) capstone (Day27 -> Day28 -> Day29 -> Day30). Day 27 scaffolded the shape of the system — the `IProjectAgent` interface, the shared `ProjectState`/`ProjectTask` blackboard, and a single `GoalRefinerAgent`. Day 28 adds the "muscle": two new concrete agents, `PlannerAgent` and `DeveloperAgent`, plus the first Semantic Kernel plugin in the series, `ProjectManagementPlugin`. `Program.cs` now chains three agents — Refiner, Planner, Developer — in a fixed, hand-written sequence and prints the final state, including the generated code for every task.
+This is day 2 of the 4-day Universal Project Manager (UPM) capstone (Day27 -> Day28 -> Day29 -> Day30). Day 27 scaffolded the shape of the system — the `IProjectAgent` interface, the shared `ProjectState`/`ProjectTask` blackboard, and a single `GoalRefinerAgent`. Day 28 adds the "muscle": two new concrete agents, `PlannerAgent` and `DeveloperAgent`, plus the capstone's first Semantic Kernel plugin, `ProjectManagementPlugin`. `Program.cs` now chains three agents — Refiner, Planner, Developer — in a fixed, hand-written sequence and prints the final state, including the generated code for every task.
 
 ## Why it matters in the series
 
-This is the lesson where the model stops just *describing* what it would do and starts actually *doing* it. Up through Day 27, an LLM call in this series produces text that the C# code goes on to parse or display. Here, the Planner's LLM call is handed a `[KernelFunction]` tool (`CreateTask`) and permission to invoke it autonomously — so the model itself decides to call C# code that mutates the shared `ProjectState`. That's the core shift plugins represent: giving a model the ability to change application state, not just generate more text.
+This is the lesson where the capstone's model stops just *describing* what it would do and starts actually *doing* it. Plugins and tool calling are not new to the series (Day 4's Calculator introduced them), but in Day 27 the capstone's only LLM call produced text that the C# code wrote into the state. Here, the Planner's LLM call is handed a `[KernelFunction]` tool (`CreateTask`) and permission to invoke it autonomously — so the model itself decides to call C# code that mutates the shared `ProjectState` blackboard. That's what plugins bring to the capstone: giving a model the ability to change shared application state, not just generate more text.
 
 ## Core concepts taught
 

@@ -34,8 +34,20 @@ namespace CoordinatorPro
                 // .NET marks an HttpRequestMessage as "sent" the moment it's submitted,
                 // so resending the same instance on a retry throws InvalidOperationException
                 // instead of actually retrying. Send a clone every attempt instead.
-                using var requestClone = await CloneAsync(request);
-                var response = await base.SendAsync(requestClone, cancellationToken);
+                // The clone is not wrapped in 'using': a returned response keeps a
+                // reference to it (response.RequestMessage), so it must stay alive as
+                // long as the response does. It is disposed only when we retry.
+                var requestClone = await CloneAsync(request);
+                HttpResponseMessage response;
+                try
+                {
+                    response = await base.SendAsync(requestClone, cancellationToken);
+                }
+                catch
+                {
+                    requestClone.Dispose();
+                    throw;
+                }
 
                 // If it succeeds, or fails with a non-transient error (like a 404), return immediately
                 int statusCode = (int)response.StatusCode;
@@ -46,6 +58,10 @@ namespace CoordinatorPro
 
                 // If we've hit our max retries, just return the failed response
                 if (i == _maxRetries) return response;
+
+                // We're retrying, so this attempt's response and request are finished with.
+                response.Dispose();
+                requestClone.Dispose();
 
                 // Exponential backoff: Wait 1s, then 2s, then 4s...
                 int delaySeconds = (int)Math.Pow(2, i);

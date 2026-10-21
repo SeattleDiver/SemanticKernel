@@ -2,7 +2,7 @@
 // ---------------------------------------------------------------------------
 // LLMs are prediction engines, not calculators - they're notoriously bad at
 // precise arithmetic. This episode fixes that by wrapping real C# math in a
-// native plugin (see MathPlugIn.cs) and enabling auto tool-invocation, so the
+// native plugin (see MathPlugin.cs) and enabling auto tool-invocation, so the
 // model can pause generation, call our code for the exact answer, and resume.
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
@@ -34,10 +34,11 @@ namespace Calculator
             // Step 4: Math word problem
             string prompt = "I had 124 apples.  I ate 15 of them.  Then I multiplied the amount of apples I had left by 3.  Finally, I divided all my apples equally among myself and 3 friends.  How many apples did each person get?  Do all math using my tools.  Show your work step by step.";
 
-            // Step 5: Enable Auto-Invocation of the tools. Without this, the
-            // model would know the Math plugin exists but wouldn't have
-            // permission to call it - it would just try (and fail) to guess
-            // the arithmetic itself.
+            // Step 5: Enable Auto-Invocation of the tools. Without a
+            // ToolCallBehavior, Semantic Kernel doesn't advertise the Math
+            // plugin's functions to the model at all - the model never learns
+            // the tools exist and just tries (and often fails) to do the
+            // arithmetic itself.
             var executionSettings = new OpenAIPromptExecutionSettings
             {
                 ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
@@ -47,13 +48,23 @@ namespace Calculator
             Console.WriteLine($"Question: {prompt}");
             Console.WriteLine("Thinking and invoking C# tools...\n");
 
-            // Step 6: Run the prompt
-            var result = await kernel.InvokePromptAsync(prompt, arguments);
-            
-            // Step 7: Display the final result
-            Console.WriteLine("\n --- AI response ---"); 
-            Console.WriteLine(result.ToString().Trim());
-            Console.WriteLine("-------------------");
+            // Step 6: Run the prompt. Wrapped in try/catch because this is
+            // the network call to the model - a bad key, rate limit, or
+            // connectivity blip would otherwise crash the whole program with
+            // a raw stack trace instead of a readable message.
+            try
+            {
+                var result = await kernel.InvokePromptAsync(prompt, arguments);
+
+                // Step 7: Display the final result
+                Console.WriteLine("\n --- AI response ---");
+                Console.WriteLine(result.ToString().Trim());
+                Console.WriteLine("-------------------");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Calculation failed: {ex.Message}");
+            }
         }
 
     }

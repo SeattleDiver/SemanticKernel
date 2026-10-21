@@ -1,8 +1,9 @@
 ﻿// Day 24: Telemetry & Observability
 // ---------------------------------------------------------------------------
-// The series capstone: wires OpenTelemetry into Semantic Kernel's own
-// diagnostic ActivitySource so every prompt render, model call, and plugin
-// execution shows up as a traced span with real durations.
+// Wires OpenTelemetry into Semantic Kernel's own diagnostic ActivitySource so
+// every kernel function, model call, and plugin execution shows up as a
+// traced span with real durations. Model-call spans need SK's experimental
+// GenAI diagnostics switch, which Main turns on before building the kernel.
 // SlowWeatherPlugin's artificial delay makes the tool-execution span clearly
 // distinct from the surrounding LLM-call spans in the console output. This
 // is provider-agnostic by construction - OTel listens to SK's own
@@ -36,6 +37,13 @@ namespace Telemetry
 
             // Build and start the tracer process
             using TracerProvider tracerProvider = traceBuilder.Build();
+
+            // Semantic Kernel only emits model-call (connector) spans when its
+            // experimental GenAI diagnostics switch is on. Without it you'd see
+            // the function spans but not the LLM calls. We deliberately leave the
+            // "...Sensitive" variant off so prompt and completion text never
+            // ends up in the trace output.
+            AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnostics", true);
 
             // 2. Initialize the Kernel
             IKernelBuilder builder = Kernel.CreateBuilder();

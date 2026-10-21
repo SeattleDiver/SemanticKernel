@@ -9,10 +9,25 @@ namespace PlanAndExecute
     {
         /// <summary>
         /// Executes the plan's steps in order, stopping at the first step that violates the
-        /// environment's constraint.
+        /// environment's constraint. A plan with no steps is itself a failure.
         /// </summary>
+        /// <param name="plan">The plan to execute.</param>
+        /// <returns>A success result, or a failure result describing why execution stopped.</returns>
         public static ExecutionResult RunPlan(ExecutionPlan plan)
         {
+            // An empty plan (e.g. the planner's reply couldn't be parsed) accomplishes nothing,
+            // so it must not fall through to "All steps executed successfully."
+            if (plan.Steps.Count == 0)
+            {
+                return new ExecutionResult
+                {
+                    Success = false,
+                    Message =
+                        "The plan contained no steps (the planner's response was empty or could not " +
+                        "be parsed). Produce a complete, ordered plan for the goal."
+                };
+            }
+
             bool archiverPaused = false;
 
             foreach (string step in plan.Steps)

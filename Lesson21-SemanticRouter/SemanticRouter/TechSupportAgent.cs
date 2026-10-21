@@ -1,8 +1,8 @@
 ﻿// TechSupportAgent
 // ---------------------------------------------------------------------------
-// A domain-isolated specialist: it clones the base kernel (empty plugin
-// collection) and registers only its own ResetPassword tool, so it has no
-// way to reach BillingAgent's tools even under an adversarial prompt.
+// A domain-isolated specialist: it clones the base kernel (which has no
+// plugins of its own) and registers only its own ResetPassword tool, so it
+// has no way to reach BillingAgent's tools even under an adversarial prompt.
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System.ComponentModel;
@@ -20,8 +20,10 @@ namespace SemanticRouter
         /// <param name="baseKernel">The shared kernel to clone AI service registrations from.</param>
         public TechSupportAgent(Kernel baseKernel)
         {
-            // CRITICAL: Clone creates a new kernel with the same AI services,
-            // but an empty plugin collection, ensuring perfect tool isolation.
+            // CRITICAL: Clone creates a new kernel with the same AI services and a
+            // separate COPY of the base kernel's plugin collection. The base kernel
+            // has no plugins, so the clone starts empty, and plugins added here
+            // never leak back into the base kernel or into BillingAgent's clone.
             _isolatedKernel = baseKernel.Clone();
             _isolatedKernel.Plugins.AddFromObject(this, "TechPlugin");
         }

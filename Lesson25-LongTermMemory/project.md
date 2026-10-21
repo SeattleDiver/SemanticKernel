@@ -33,7 +33,8 @@ enough to make an agent feel like it remembers you. It also introduces the
 pattern of reusing an LLM as a structured-output/classification tool (the
 fact extractor) rather than only as a chatbot, and shows two independently
 purposed classes sharing a single `IChatCompletionService`, which
-foreshadows the multi-agent orchestration patterns used later in Phase 3.
+foreshadows the multi-agent orchestration patterns used later in the
+Capstone I lessons (Days 27-30) that close Part 1.
 
 ## Core concepts taught
 

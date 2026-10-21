@@ -8,15 +8,22 @@ cross-cutting filters wired in via dependency injection:
 
 - **`PromptLoggingFilter`** (`IPromptRenderFilter`) intercepts the fully
   rendered prompt text immediately before it leaves the process for OpenAI.
-- **`AuditFunctionFilter`** (`IFunctionInvocationFilter`) wraps every plugin
-  invocation with timing and before/after audit logging.
+- **`AuditFunctionFilter`** (`IFunctionInvocationFilter`) wraps every kernel
+  function invocation with timing and before/after audit logging. That means
+  each plugin call, and also the prompt itself: `InvokePromptAsync` compiles
+  the prompt into a `KernelFunction` (no plugin name, a generated
+  `InvokePromptAsync_<id>` function name) and invokes it, so the filter wraps
+  the whole prompt call too.
 
-The one call to `kernel.InvokePromptAsync` fans out into: the prompt filter
-(logging the initial question), the real OpenAI call (which decides a tool
-is needed), the function filter (timing/auditing the plugin call), the
-`SecureDatabasePlugin.GetBalanceAsync` method itself, the prompt filter again
-(logging the follow-up prompt carrying the tool result), and finally OpenAI's
-natural-language answer.
+The one call to `kernel.InvokePromptAsync` fans out into: the function filter
+opening an outer audit pair around the prompt function, the prompt filter
+(logging the rendered question, once), the real OpenAI call (which decides a
+tool is needed), the function filter again (an inner audit pair timing the
+`Database.GetCustomerBalance` call), the `SecureDatabasePlugin.GetBalanceAsync`
+method itself, OpenAI's natural-language answer (the tool result goes back to
+the model as part of the chat history, so the prompt is not rendered a second
+time), and finally the outer audit pair closing with that answer as its
+result.
 
 ## Why it matters in the series
 
@@ -34,8 +41,9 @@ the same filter/interception model.
 - **`IPromptRenderFilter`** — intercepts a prompt after variable substitution
   but before it is sent to the model; the natural place for logging or PII
   redaction.
-- **`IFunctionInvocationFilter`** — wraps a `[KernelFunction]` call end to
-  end, running code both before and after the real C# method executes.
+- **`IFunctionInvocationFilter`** — wraps any `KernelFunction` invocation end
+  to end (a native `[KernelFunction]` method or a prompt function), running
+  code both before and after the real operation executes.
 - **The `next` delegate pattern** — both filters do pre-work, call
   `await next(context)` to let the real operation proceed, then do
   post-work, mirroring ASP.NET Core middleware.
@@ -50,8 +58,8 @@ the same filter/interception model.
   (e.g., reject a request without letting a sensitive plugin run).
 - **Why AutoInvoke matters** — `ToolCallBehavior.AutoInvokeKernelFunctions`
   is what causes Semantic Kernel to actually execute the requested function
-  (and therefore fire `AuditFunctionFilter`) instead of just reporting that
-  the model wants to call it.
+  (and therefore fire the inner `AuditFunctionFilter` pair around the tool)
+  instead of just reporting that the model wants to call it.
 
 ## Cleanup notes
 
@@ -63,9 +71,13 @@ the same filter/interception model.
   output undercut the lesson. Changed the header to `Console.WriteLine` so
   the prompt text always starts on its own line, and synced the "Complete
   Code" listing in the docx to match.
+- Fixed inconsistent logging in `AuditFunctionFilter`: the opening line
+  logged `PluginName` and the closing line logged `Name`. Both lines now log
+  the same identifier, `PluginName.Name` (or just the function name for the
+  prompt function, which has no plugin), and the wording no longer calls
+  every invocation a "tool", since the outer pair wraps the prompt function.
 - Deliberately left as enhancement opportunities (not defects) per the prior
-  `missing.md` analysis: inconsistent `PluginName` vs `Name` logging between
-  `AuditFunctionFilter`'s pre/post log lines, no live demonstration of a
+  `missing.md` analysis: no live demonstration of a
   filter actually blocking a call, no PII-redaction example in
   `PromptLoggingFilter` despite it being the stated flagship use case, the
   dead commented-out return-string line in `SecureDatabasePlugin`, and the

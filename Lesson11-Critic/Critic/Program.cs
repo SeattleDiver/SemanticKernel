@@ -1,7 +1,7 @@
 ﻿// Day 11: The Critic
 // ---------------------------------------------------------------------------
 // A rubric-based code reviewer. Rather than forcing real structured JSON
-// output (that comes later, in Days 19/21), this episode gets a structured-
+// output (as Day 7's ResponseFormat does), this episode gets a structured-
 // looking result purely through prompt instructions - asking the model to
 // follow a fixed SCORE/PROS/CONS/FIX text format. The sample method under
 // review has a deliberate bug (unchecked division) for the critic to catch.
@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 
-namespace critic
+namespace Critic
 {
     /// <summary>Entry point that runs a single-shot, rubric-based code critique on a hard-coded C# snippet.</summary>
     class Program
@@ -42,12 +42,12 @@ Your task is to critique the C# code provided by the user.
 
 Evaluate the code based on these 3 criteria:
 1. Reliability (Is there error handling?)
-2. Performane (Is it efficient?)
+2. Performance (Is it efficient?)
 3. Best Practices (Does it follow C# best practices?)
 
 Output your critique in this EXACT format:
 SCORE: [0-10]
-PROS: [List hightlights]
+PROS: [List highlights]
 CONS: [List flaws]
 FIX: [Provide a corrected version of the code if necessary]
 

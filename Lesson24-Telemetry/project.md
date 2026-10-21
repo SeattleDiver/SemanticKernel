@@ -18,9 +18,9 @@ instrumentation around specific calls. This lesson flips that: rather than
 wrapping every operation yourself, you subscribe to the `ActivitySource`
 Semantic Kernel already emits under the hood and get detailed,
 provider-agnostic tracing for free, with zero changes to the plugin or
-prompt code. It's presented as the series capstone because it's the payoff
-of everything built up to this point - a single `InvokePromptAsync` call
-now produces multiple visible spans (the initial LLM call, the plugin
+prompt code. Once Semantic Kernel's experimental GenAI diagnostics switch
+is turned on (one `AppContext.SetSwitch` call), a single `InvokePromptAsync`
+call produces multiple visible spans (the initial LLM call, the plugin
 execution, and the follow-up LLM call) with no manual bookkeeping.
 
 ## Core concepts taught
@@ -31,6 +31,11 @@ execution, and the follow-up LLM call) with no manual bookkeeping.
 - **ActivitySource subscription**: `traceBuilder.AddSource("Microsoft
   .SemanticKernel*")` tells the tracer to listen to every diagnostic
   activity Semantic Kernel emits under that namespace.
+- **GenAI diagnostics switch**: model-call spans are experimental in
+  Semantic Kernel and only emitted after
+  `AppContext.SetSwitch("Microsoft.SemanticKernel.Experimental.GenAI.EnableOTelDiagnostics", true)`.
+  The `...EnableOTelDiagnosticsSensitive` variant, which also records prompt
+  and completion text, is deliberately left off.
 - **Console exporter as a teaching tool**: `AddConsoleExporter()` prints raw
   trace data straight to the terminal, standing in for a real backend like
   Jaeger, Application Insights, or Datadog.

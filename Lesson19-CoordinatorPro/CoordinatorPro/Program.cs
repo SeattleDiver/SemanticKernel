@@ -11,23 +11,9 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace CoordinatorPro
 {
-    // The strict JSON schema the Coordinator must respond with on every turn.
-    /// <summary>The Coordinator's strict-JSON routing decision: its reasoning and which agent should act next.</summary>
-    public class RoutingDecision
-    {
-        /// <summary>The Coordinator's step-by-step reasoning for this routing decision.</summary>
-        [JsonPropertyName("reasoning")]
-        public string Reasoning { get; set; } = "";
-
-        /// <summary>Which agent should act next: "CODER", "AUDITOR", or "COMPLETE".</summary>
-        [JsonPropertyName("nextAgent")]
-        public string NextAgent { get; set; } = "";
-    }
-
     /// <summary>Entry point that routes a Coder/Auditor pair through a model-driven Coordinator instead of a fixed turn order.</summary>
     internal class Program
     {
@@ -159,7 +145,7 @@ namespace CoordinatorPro
         /// <param name="service">The chat completion service to invoke.</param>
         static async Task CallAgent(string name, string persona, ChatHistory history, IChatCompletionService service)
         {
-            // Ensure a user message exists betfore this 'Assistant' response
+            // Ensure a user message exists before this 'Assistant' response
             history.AddUserMessage($"{name}, please perform your task based on the current state.");
 
             // Persona swapping

@@ -27,15 +27,15 @@ namespace HumanInTheLoop
 
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
 
-            // 2. Initialize our clean, signle-responsibility objects
-            string persona = "You are a Corporate Communications Directory.  Write professional, concise email announcements.";
+            // 2. Initialize our clean, single-responsibility objects
+            string persona = "You are a Corporate Communications Director.  Write professional, concise email announcements.";
             var aiWorker = new AiWorker(chatService, persona);
             var gatekeeper = new HumanGatekeeper();
 
             ChatHistory history = new ChatHistory();
 
             Console.WriteLine("Corporate Comms System Initialized.");
-            Console.Write("What is the top of the announcement? ");
+            Console.Write("What is the topic of the announcement? ");
             string? topic = Console.ReadLine();
 
             // The initial prompt sets the first 'User' turn in the conversation

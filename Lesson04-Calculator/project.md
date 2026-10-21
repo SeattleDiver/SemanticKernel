@@ -38,8 +38,10 @@ back-and-forth automatically.
   (`"Math"`), making its functions addressable as `Math.Add`,
   `Math.Divide`, etc.
 - **Auto tool-invocation** — `ToolCallBehavior.AutoInvokeKernelFunctions`
-  is what actually grants permission to execute a tool automatically;
-  registering the plugin alone only makes the model aware it exists.
+  both advertises the kernel's functions to the model and lets Semantic
+  Kernel execute the calls it requests automatically. Registering the
+  plugin alone isn't enough: with no `ToolCallBehavior` set, the functions
+  are never sent to the model, so it doesn't know the tools exist.
 - **The reasoning loop** — `InvokePromptAsync` hides several silent
   round-trips: the model requests a function call, Semantic Kernel runs
   the real C# method, the result is fed back into the model's context, and
@@ -56,8 +58,11 @@ back-and-forth automatically.
   `DivideByZeroException` with a clear message, which Semantic Kernel can
   surface back to the model as a real tool error. The docx's "Complete
   Code" listing for `MathPlugin.cs` was updated to match.
-- **Left as enhancement opportunities, not defects:** error handling
-  around the tool-calling loop itself, plugin unit tests, a cap on
+- **Fixed:** the `InvokePromptAsync` call in `Program.cs` is now wrapped
+  in a try/catch, matching Lessons 3, 5 and 6, so a bad key, rate limit
+  or network failure prints a readable message instead of a stack trace.
+- **Left as enhancement opportunities, not defects:** plugin unit
+  tests, a cap on
   tool-call round-trips, structured logging via `ILogger`, and a
   negative/adversarial word-problem example are all reasonable follow-ups
   (see the prior `missing.md` analysis) but are production-hardening or

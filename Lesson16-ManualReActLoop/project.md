@@ -60,6 +60,11 @@ reuse this same bounded-loop idea.
   the full response (including any function-call items) is preserved in
   history rather than just its text. Verified with `dotnet build` — build
   still succeeds.
+- **Fixed:** the system prompt told the model to "Wait for the user to
+  provide the OBSERVATION", but observations come back as `AuthorRole.Tool`
+  messages carrying a `FunctionResultContent`, not from the user. The prompt
+  now says the observation comes back as a tool message. `ResearchPlugin`
+  also moved out of `Program.cs` into its own `ResearchPlugin.cs`.
 - **Left as enhancement opportunities (from `missing.md`), not defects:**
   richer logging/console framing per iteration, a final "success vs. max
   iterations reached" status message, a larger mock knowledge base in

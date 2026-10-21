@@ -20,6 +20,11 @@ namespace MarketNegotiation
         /// Submits a bid for the given participant, informed by the current market signal
         /// (e.g. how far the total ask is over budget and what everyone else is asking for).
         /// </summary>
+        /// <param name="participant">The team submitting the bid.</param>
+        /// <param name="totalBudget">The shared budget all teams are competing for.</param>
+        /// <param name="marketSignal">The public summary of the previous round shown to every team.</param>
+        /// <returns>The participant's parsed bid for this round.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the reply is empty or can't be parsed as a bid.</exception>
         public async Task<Bid> SubmitBidAsync(NegotiationParticipant participant, decimal totalBudget, string marketSignal)
         {
             string prompt = $$"""
@@ -49,23 +54,21 @@ namespace MarketNegotiation
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
 
+            // An unparseable reply is not a $0 bid. Throwing lets the caller treat it exactly like
+            // a failed call, so a bad parse can never make the total "fit" the budget.
+            Bid? bid;
             try
             {
-                return JsonSerializer.Deserialize<Bid>(response.Content ?? "{}") ?? Unparseable();
+                bid = string.IsNullOrWhiteSpace(response.Content)
+                    ? null
+                    : JsonSerializer.Deserialize<Bid>(response.Content);
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
-                return Unparseable();
+                throw new InvalidOperationException("Bid response could not be parsed.", ex);
             }
-        }
 
-        /// <summary>
-        /// Fallback bid used when this participant's own JSON response can't be parsed.
-        /// </summary>
-        private static Bid Unparseable() => new()
-        {
-            RequestedAmount = 0,
-            Justification = "Failed to parse bid response."
-        };
+            return bid ?? throw new InvalidOperationException("Bid response was empty.");
+        }
     }
 }

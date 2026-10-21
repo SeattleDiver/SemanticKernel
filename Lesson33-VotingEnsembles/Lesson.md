@@ -3,7 +3,7 @@
 ## Overview
 
 This lesson samples the same question multiple times and aggregates the
-independent answers by majority vote, instead of synthesizing them into a
+independent answers by vote (the most common answer wins), instead of synthesizing them into a
 new one. It's built on Day 32's fan-in mechanics (concurrent sampling,
 then combining), but for a different class of problem: one with a single
 correct answer, where the goal is to let the crowd cancel out one sample's
@@ -41,6 +41,14 @@ answer can take a wrong turn partway through and still sound confident.
 Self-consistency samples several independent reasoning paths for the exact
 same question and takes whichever final answer shows up most often. A path
 that stumbles is just one vote among several that didn't.
+
+**Plurality, not majority.** "Most often" means a plurality: the answer
+with the highest count wins even if it holds less than half the votes. Five
+samples splitting 2-1-1-1 still produce a consensus answer (the one with
+two votes). The only no-consensus outcome is a *tie* — two or more answers
+sharing the top count, such as 2-2-1 — and the program says so explicitly
+rather than quietly crowning whichever tied answer happened to be grouped
+first.
 
 **Synthesis vs. voting — pick by whether there's a right answer.** Day 32's
 task ("explain a closure with an analogy") has no single correct output, so
@@ -276,9 +284,16 @@ namespace VotingEnsembles
                 return;
             }
 
-            for (int i = 0; i < samples.Length; i++)
+            // Number each sample by its original request index, so "Sample 4" names the same
+            // request whether or not an earlier sample failed and was dropped.
+            for (int i = 0; i < rawSamples.Length; i++)
             {
-                Console.WriteLine($"--- Sample {i + 1} (answer: {samples[i].FinalAnswer}) ---\n{samples[i].Reasoning}\n");
+                if (rawSamples[i] is not { } sample)
+                {
+                    continue;
+                }
+
+                Console.WriteLine($"--- Sample {i + 1} (answer: {sample.FinalAnswer}) ---\n{sample.Reasoning}\n");
             }
 
             // A parse failure isn't a dropped connection - it's a returned-but-unusable sample.
@@ -312,7 +327,9 @@ namespace VotingEnsembles
 
             if (consensus.IsTie)
             {
-                Console.WriteLine($"\nTIE - no single answer received a majority of {votableSamples.Length} samples.");
+                int topVotes = consensus.VoteCounts[consensus.WinningAnswer];
+                int tiedCount = consensus.VoteCounts.Count(kv => kv.Value == topVotes);
+                Console.WriteLine($"\nTIE - {tiedCount} answers share the top count of {topVotes} vote(s) out of {votableSamples.Length} samples.");
                 Console.WriteLine("\n--- NO CONSENSUS (showing one tied answer) ---");
             }
             else

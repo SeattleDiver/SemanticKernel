@@ -57,7 +57,8 @@ takes this same two-agent pattern and formalizes it with a reusable
   substring-based approval check, the duplicated persona-swap logic between
   the two agent turns, the lack of cancellation tokens/timeouts, the lack of
   a per-round console log, the lack of a distinct "final approved slogan"
-  summary, and the minor wording typos in the persona strings. None of these
+  summary. (The Copywriter persona's "punch 5-word slogan" typo has since
+  been corrected to "punchy".) None of these
   block the tutorial from building or running as documented, and several
   (the duplication, the substring check) are explicitly revisited and
   improved in Day 19, so leaving them visible here preserves the intended

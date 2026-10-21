@@ -6,7 +6,7 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 namespace VotingEnsembles
 {
     /// <summary>
-    /// Entry point that samples a question multiple times and aggregates the answers by majority vote.
+    /// Entry point that samples a question multiple times and aggregates the answers by plurality vote.
     /// </summary>
     internal class Program
     {
@@ -56,9 +56,16 @@ namespace VotingEnsembles
                 return;
             }
 
-            for (int i = 0; i < samples.Length; i++)
+            // Number each sample by its original request index, so "Sample 4" names the same
+            // request whether or not an earlier sample failed and was dropped.
+            for (int i = 0; i < rawSamples.Length; i++)
             {
-                Console.WriteLine($"--- Sample {i + 1} (answer: {samples[i].FinalAnswer}) ---\n{samples[i].Reasoning}\n");
+                if (rawSamples[i] is not { } sample)
+                {
+                    continue;
+                }
+
+                Console.WriteLine($"--- Sample {i + 1} (answer: {sample.FinalAnswer}) ---\n{sample.Reasoning}\n");
             }
 
             // A parse failure isn't a dropped connection - it's a returned-but-unusable sample.
@@ -92,7 +99,9 @@ namespace VotingEnsembles
 
             if (consensus.IsTie)
             {
-                Console.WriteLine($"\nTIE - no single answer received a majority of {votableSamples.Length} samples.");
+                int topVotes = consensus.VoteCounts[consensus.WinningAnswer];
+                int tiedCount = consensus.VoteCounts.Count(kv => kv.Value == topVotes);
+                Console.WriteLine($"\nTIE - {tiedCount} answers share the top count of {topVotes} vote(s) out of {votableSamples.Length} samples.");
                 Console.WriteLine("\n--- NO CONSENSUS (showing one tied answer) ---");
             }
             else

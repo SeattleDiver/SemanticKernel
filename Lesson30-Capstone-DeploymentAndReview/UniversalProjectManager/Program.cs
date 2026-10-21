@@ -25,7 +25,7 @@ namespace UniversalProjectManager
             builder.AddOpenAIChatCompletion("gpt-4.1-mini", apiKey);
             Kernel baseKernel = builder.Build();
 
-            Console.WriteLine("Universal Project Manager (UPM) - Phase 3 Orchestration");
+            Console.WriteLine("Universal Project Manager (UPM) - Capstone I Orchestration");
 
             // Initialize Shared State
             ProjectState projectState = new ProjectState();

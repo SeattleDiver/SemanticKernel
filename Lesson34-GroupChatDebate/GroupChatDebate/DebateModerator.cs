@@ -25,7 +25,9 @@ namespace GroupChatDebate
             IReadOnlySet<string> spokenInLastTwoTurns)
         {
             // The most recent speaker is removed from the candidate pool entirely, not just
-            // discouraged by prompt wording - see Program.cs for why that matters.
+            // discouraged by prompt wording: asking an agent to continue straight after its own
+            // turn, with nothing new said in between, reliably produced empty replies in testing
+            // (see "Excluding, not just discouraging" in the lesson notes).
             var candidates = participants.Where(p => p.Name != lastSpeaker).ToList();
             if (candidates.Count == 0)
             {

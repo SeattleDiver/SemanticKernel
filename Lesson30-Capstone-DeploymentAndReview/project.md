@@ -20,7 +20,9 @@ ways side by side:
   `AddTransient` services in the ASP.NET Core DI container, so the framework
   assembles a fresh agent team for every request. An interactive Scalar UI is
   served at `/scalar/v1` in place of the default `dotnet new webapi`
-  `WeatherForecastController` sample.
+  `WeatherForecastController` sample, and `UniversalProjectManager.Api.http`
+  posts a sample project idea (plus an empty-goal request that returns 400)
+  to the real endpoint from Visual Studio.
 
 ## Why it matters in the series
 
@@ -84,9 +86,13 @@ copies of the affected files), so each fix below was applied twice:
   prints a clear failure message and exits gracefully, and the API now
   returns HTTP 502 with a descriptive message instead of an opaque 500.
 
+Also removed leftover `dotnet new webapi` template code from the Web API:
+`WeatherForecast.cs` (a model with no controller) was deleted, and
+`UniversalProjectManager.Api.http`, which still sent `GET /weatherforecast/`,
+was rewritten to `POST /api/project/generate` with a JSON-string project idea.
+
 **Deliberately left as enhancement opportunities** (per `missing.md`, not
-treated as defects): the leftover `WeatherForecast.cs` template file with no
-controller (harmless scaffold cruft); no authentication/authorization, no
+treated as defects): no authentication/authorization, no
 request-DTO validation, no API versioning, no CORS configuration, and no
 containerization/deployment artifacts on the Web API (all legitimate
 "enterprise readiness" gaps, but production-hardening work beyond this

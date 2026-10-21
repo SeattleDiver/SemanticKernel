@@ -59,12 +59,15 @@ orchestrations (multi-agent, coordinator) can drop in as a safety gate.
   stay stuck at index 0 forever, corrupting every later revision attempt.
   The removal now happens in a `finally` block, so it always runs even on
   failure.
+- **Fixed:** the `ReviewResult` record moved out of `HumanGatekeeper.cs`
+  into its own `ReviewResult.cs`, and the cosmetic typos were corrected (the
+  "What is the topic of the announcement?" prompt, the "Corporate
+  Communications Director" persona, and comment typos).
 - The following items from the prior gap analysis (`missing.md`) were
   deliberately left as enhancement opportunities rather than defects: no
   cancellation/timeout on the review step, no audit trail for approvals, no
   input validation/reprompt on empty topic or feedback text, hardcoded
-  persona/revision-limit configuration, cosmetic comment/string typos
-  ("signle-responsibility", "Corporate Communications Directory", etc.), no
+  persona/revision-limit configuration, no
   persistence of the approved draft, and no `IHumanGatekeeper` abstraction.
   None of these block a student from building, running, or understanding
   the lesson as documented.

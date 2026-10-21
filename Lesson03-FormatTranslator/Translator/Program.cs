@@ -27,11 +27,11 @@ namespace FormatTranslator
             builder.AddOpenAIChatCompletion(modelId, apiKey);
             Kernel kernel = builder.Build();
 
-            // Step 2. Defind the unstrucured input and the prompt template
+            // Step 2. Define the unstructured input and the prompt template
             string unstructuredData = "We just hired Sarah Connor. She is 29 years old, works as a Cybersecurity Analyst, and her email is sarah.c@sky.net. She starts on Monday.";
 
             // Step 3. Define the strict prompt template
-            // We explicitly ban markdown blocks and converssational text to ensure raw JSON output
+            // We explicitly ban markdown blocks and conversational text to ensure raw JSON output
             string promptTemplate = @"
 System: You are a strict data transformation agent. Your ONLY job is to convert natural language text into a valid JSON object. 
 You must NOT output any markdown formatting (like ```json), no conversational text, and no explanations. Output raw JSON only.

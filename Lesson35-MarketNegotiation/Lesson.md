@@ -66,8 +66,10 @@ keeps the loop from needing to run forever waiting for organic agreement.
 round makes one call per participant. A single dropped call - and this
 lesson's own testing hit plenty of them live, purely from provider-side
 load - shouldn't force the whole negotiation to restart; it should just
-mean that participant's ask carries forward unchanged into the next round,
-exactly like a real bidder who didn't get a chance to revise this time.
+mean that participant's last valid ask carries forward unchanged into the
+next round, exactly like a real bidder who didn't get a chance to revise
+this time. A reply that can't be parsed is handled the same way - it is
+never counted as a `$0` bid.
 
 ## Full Walkthrough / Code
 
@@ -149,21 +151,22 @@ namespace MarketNegotiation
 
             var response = await _chatService.GetChatMessageContentAsync(history, settings);
 
+            // An unparseable reply is not a $0 bid. Throwing lets the caller treat it exactly like
+            // a failed call, so a bad parse can never make the total "fit" the budget.
+            Bid? bid;
             try
             {
-                return JsonSerializer.Deserialize<Bid>(response.Content ?? "{}") ?? Unparseable();
+                bid = string.IsNullOrWhiteSpace(response.Content)
+                    ? null
+                    : JsonSerializer.Deserialize<Bid>(response.Content);
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
-                return Unparseable();
+                throw new InvalidOperationException("Bid response could not be parsed.", ex);
             }
-        }
 
-        private static Bid Unparseable() => new()
-        {
-            RequestedAmount = 0,
-            Justification = "Failed to parse bid response."
-        };
+            return bid ?? throw new InvalidOperationException("Bid response was empty.");
+        }
     }
 }
 ```
@@ -277,9 +280,10 @@ namespace MarketNegotiation
 
             string marketSignal = "This is the first round; no bids have been submitted yet.";
 
-            var lastKnownBids = participants.ToDictionary(
-                p => p.Name,
-                _ => new Bid { RequestedAmount = 0, Justification = "No bid received yet." });
+            // Only bids that were actually received and parsed are remembered - there is no $0
+            // placeholder seed. A team whose call fails (or whose reply can't be parsed) before it
+            // has ever bid validly has nothing to carry forward, so that round can't settle.
+            var lastValidBids = new Dictionary<string, Bid>();
 
             for (int round = 1; round <= MaxRounds; round++)
             {
@@ -295,19 +299,28 @@ namespace MarketNegotiation
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"  [WARN] {p.Name}'s bid call failed, reusing their last known bid: {ex.Message}");
-                        bid = lastKnownBids[p.Name];
+                        if (!lastValidBids.TryGetValue(p.Name, out Bid? previous))
+                        {
+                            Console.WriteLine($"  [WARN] {p.Name} has no valid bid this round and none to carry forward: {ex.Message}");
+                            continue;
+                        }
+
+                        Console.WriteLine($"  [WARN] {p.Name}'s bid failed, reusing their last valid bid: {ex.Message}");
+                        bid = previous;
                     }
 
                     bidsByName[p.Name] = bid;
-                    lastKnownBids[p.Name] = bid;
+                    lastValidBids[p.Name] = bid;
                     Console.WriteLine($"  {p.Name}: ${bid.RequestedAmount} - {bid.Justification}");
                 }
 
+                // A team without a valid bid can't be part of a settlement: the round only
+                // settles when every team has a valid bid AND the total fits the budget.
+                bool everyTeamBid = bidsByName.Count == participants.Count;
                 (bool fits, decimal total) = MarketCoordinator.CheckFit(bidsByName, TotalBudget);
                 Console.WriteLine($"  Total requested: ${total} (budget: ${TotalBudget})\n");
 
-                if (fits)
+                if (fits && everyTeamBid)
                 {
                     Console.WriteLine("--- ALLOCATION (bids fit the budget as requested) ---");
                     foreach (var (name, bid) in bidsByName)
@@ -326,14 +339,21 @@ namespace MarketNegotiation
                     {
                         Console.WriteLine($"  {name}: ${amount}");
                     }
+                    foreach (var p in participants.Where(p => !bidsByName.ContainsKey(p.Name)))
+                    {
+                        Console.WriteLine($"  {p.Name}: no valid bid received - not allocated");
+                    }
                     return;
                 }
 
                 string asksSummary = string.Join(", ", bidsByName.Select(kv => $"{kv.Key}: ${kv.Value.RequestedAmount}"));
-                marketSignal =
-                    $"Round {round} results: the total requested (${total}) exceeds the ${TotalBudget} " +
-                    $"budget by ${total - TotalBudget}. Current asks were [{asksSummary}]. You must revise " +
-                    "your ask down to help the total fit the budget - holding firm will not be respected.";
+                marketSignal = fits
+                    ? $"Round {round} results: not every team submitted a valid bid, so the round could not " +
+                      $"settle. Current asks were [{asksSummary}], totaling ${total} against the ${TotalBudget} " +
+                      "budget. Submit your bid again."
+                    : $"Round {round} results: the total requested (${total}) exceeds the ${TotalBudget} " +
+                      $"budget by ${total - TotalBudget}. Current asks were [{asksSummary}]. You must revise " +
+                      "your ask down to help the total fit the budget - holding firm will not be respected.";
             }
         }
     }
@@ -350,10 +370,19 @@ enough latitude to negotiate down without being told by how much, so any
 concession is the model's own judgment call in response to the market
 signal, not a scripted number.
 
-`lastKnownBids` is seeded before round 1 with a `$0` placeholder per
-participant specifically so a failed *first* call has something safe to
-fall back to - there's no real previous bid yet on round 1, so the seed
-has to be a value that can't accidentally look like a legitimate ask.
+An unparseable reply is treated exactly like a dropped call, not as a
+`$0` bid: `SubmitBidAsync` throws instead of inventing a placeholder, and
+`Program.cs` carries that team's last *valid* bid forward. A `$0`
+placeholder would be dangerous here, because it counts toward the total -
+one bad parse could make the remaining bids "fit" the budget and settle the
+round with that team allocated nothing. For the same reason,
+`lastValidBids` starts empty rather than seeded with `$0` per team. A team
+with no valid bid yet has nothing to carry forward, so it's left out of
+that round's bids, and the round can't settle (`fits && everyTeamBid`)
+until every team has bid validly. If the round cap is reached with a team
+still missing, the rationing fallback divides the budget among the teams
+that did bid and reports the missing team as not allocated, rather than
+printing a `$0` share as if it had been negotiated.
 
 Bids are collected one participant at a time (a plain `foreach` with
 `await` inside, not `Task.WhenAll`) rather than concurrently. A sealed-bid
@@ -399,6 +428,8 @@ TOTAL BUDGET: $10000
 Exact numbers and how many rounds it takes will vary between runs - that's
 the point of not having a fixed protocol. If a participant's bid call
 fails partway through (this lesson hit real, live provider timeouts during
-its own testing), the console shows a `[WARN]` line and that participant's
-previous bid simply carries forward unchanged into the total, rather than
-crashing the negotiation.
+its own testing) or its reply can't be parsed, the console shows a `[WARN]`
+line and that participant's previous valid bid simply carries forward
+unchanged into the total, rather than crashing the negotiation. If that
+happens before the participant has ever bid validly, the round is held
+open instead of settling without them.

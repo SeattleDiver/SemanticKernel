@@ -109,6 +109,19 @@ namespace PlanAndExecute
     {
         public static ExecutionResult RunPlan(ExecutionPlan plan)
         {
+            // An empty plan (e.g. the planner's reply couldn't be parsed) accomplishes nothing,
+            // so it must not fall through to "All steps executed successfully."
+            if (plan.Steps.Count == 0)
+            {
+                return new ExecutionResult
+                {
+                    Success = false,
+                    Message =
+                        "The plan contained no steps (the planner's response was empty or could not " +
+                        "be parsed). Produce a complete, ordered plan for the goal."
+                };
+            }
+
             bool archiverPaused = false;
 
             foreach (string step in plan.Steps)
@@ -206,9 +219,11 @@ namespace PlanAndExecute
             }
         }
 
+        // No steps on a parse failure: the simulated environment treats an empty plan as a
+        // failed execution, so it goes through the same replanning path as any other failure.
         private static ExecutionPlan Empty() => new()
         {
-            Steps = new List<string> { "Failed to parse plan; no steps generated." }
+            Steps = new List<string>()
         };
     }
 }
@@ -296,6 +311,15 @@ regeneration. The Planner has to read "ArchiverJob... holds a lock... must
 be paused before any schema change step runs" and independently arrive at
 inserting a pause step early and a resume step late - which is what makes
 this closed-loop *planning* and not a scripted patch.
+
+A plan the Planner couldn't produce is a failure too, not a free pass. If
+the model's reply can't be parsed, `Planner.Empty()` returns a plan with no
+steps, and `RunPlan` rejects an empty plan before looking at any keywords.
+Without that check, a placeholder step that mentions neither a migration
+nor a schema would walk straight past the archiver constraint and report
+`SUCCESS` for a plan that did nothing. Instead, the "no steps" failure
+message goes back into the loop as `failureContext`, exactly like the
+archiver failure, and triggers a replan.
 
 ## Expected Result
 

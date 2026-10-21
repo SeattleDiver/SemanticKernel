@@ -16,8 +16,10 @@ regression-testing harness for prompts or model changes would be.
 Earlier days in this series build agents that talk *to* a user. This lesson
 repurposes the exact same building block — a `Kernel` plus an
 `IChatCompletionService` — to grade another agent's output instead of
-conversing with anyone. It is the series' first look at automated,
-criteria-based quality control for AI output, a concern that becomes
+conversing with anyone. Earlier critic loops (Days 11 and 18) already had
+one model review another's draft so it could be revised; this lesson is the
+series' first automated, scored test harness: an LLM judge grading a fixed
+test set against known-correct answers, a concern that becomes
 essential once agents are shipped and need to be regression-tested the way
 any other code does.
 

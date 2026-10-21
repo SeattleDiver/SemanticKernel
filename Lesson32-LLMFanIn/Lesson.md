@@ -3,19 +3,21 @@
 ## Overview
 
 This lesson completes the parallelization pattern that Day 7 left half
-finished. Day 7 fanned *out* — N independent extraction calls ran against a
-batch of feedback — but fanned back *in* with plain C#/LINQ (grouping,
-counting). Here, N independent drafts are generated concurrently, and the
+finished. Day 7 established the shape — N independent extraction calls ran
+against a batch of feedback, one at a time in a `foreach` — and then
+aggregated the results with plain C#/LINQ (grouping, counting). Here, the N
+independent drafts are generated concurrently, and the
 fan-in step is itself an LLM call: a synthesis editor that combines the
 strongest elements of all N drafts into one answer better than any single
 draft alone.
 
 ## Prerequisites
 
-- **Day 7 (DataAnalyst)** — the fan-out half of this pattern: firing
-  multiple independent model calls over a batch and collecting typed
-  results. This lesson reuses that concurrency idea but replaces Day 7's
-  deterministic LINQ aggregation with a model call.
+- **Day 7 (DataAnalyst)** — the many-calls-then-aggregate shape of this
+  pattern: making multiple independent model calls over a batch
+  (sequentially, in a `foreach`) and collecting typed results. This lesson
+  makes those calls concurrent and replaces Day 7's deterministic LINQ
+  aggregation with a model call.
 - **Day 31 (Self-Reflection Loop)** — structured JSON output via
   `ResponseFormat`, and the convention of giving a synthesis/judgment step
   its own low temperature while generation runs hot. The same split is used
@@ -39,8 +41,9 @@ dotnet add package Microsoft.SemanticKernel.Connectors.OpenAI --version 1.78.0
 
 **Fan-out is the easy half.** Running N model calls concurrently is just
 `Task.WhenAll` over N independent `Task<string>` calls — nothing agentic
-about it, it's ordinary async fan-out. Day 7 already proved this half of
-the pattern works.
+about it, it's ordinary async fan-out. Day 7 made its independent calls one
+at a time in a `foreach`; the only change here is starting them all at once
+and awaiting them together.
 
 **Fan-in is the half that needs an LLM.** Once you have N *qualitative,
 free-text* drafts — not N structured records with fields to group and

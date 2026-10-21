@@ -30,7 +30,7 @@ namespace HumanInTheLoop
         /// <returns>The generated draft text.</returns>
         public async Task<string> GenerateDraftAsync(ChatHistory history)
         {
-            // 1. Inject the System Perona at the top of the history
+            // 1. Inject the System Persona at the top of the history
             var systemMessage = new ChatMessageContent(AuthorRole.System, _persona);
             history.Insert(0, systemMessage);
 

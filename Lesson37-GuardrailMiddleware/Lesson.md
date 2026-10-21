@@ -184,7 +184,7 @@ it, culture info, etc.); reusing the original preserves all of that and
 only swaps the value the rest of the pipeline will see.
 
 Demo 2's prompt explicitly asks the model to name "CloudPeak" - that's
-deliberate, the same way Day 34's task was deliberately over-specified. A
+deliberate, the same way Day 31's task was deliberately over-specified. A
 guardrail lesson that only sometimes triggers its own guardrail doesn't
 teach anything reliably on camera; forcing the violation to happen every
 run is what makes the rejection path itself the thing being demonstrated,

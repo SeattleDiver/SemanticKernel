@@ -3,7 +3,8 @@
 // Semantic Kernel Filters - think ASP.NET Core middleware, but for AI calls.
 // IPromptRenderFilter (PromptLoggingFilter.cs) intercepts the fully-rendered
 // prompt right before it leaves the process; IFunctionInvocationFilter
-// (AuditFunctionFilter.cs) wraps every plugin call with timing/audit logic.
+// (AuditFunctionFilter.cs) wraps every function call - the prompt function
+// InvokePromptAsync creates and each plugin call - with timing/audit logic.
 // Both are registered once via DI and then apply to every prompt/tool call
 // automatically - SecureDatabasePlugin.cs itself stays free of any
 // logging/observability code.
@@ -46,8 +47,9 @@ namespace FunctionFilters
                 ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
             };
 
-            // This single line triggers the prompt filter, the OpenAI API,
-            // the function filter, the C# tool, and the final OpenAI summary!
+            // This single line triggers the function filter (around the prompt
+            // function), the prompt filter (once), the OpenAI API, the function
+            // filter again (around the C# tool), and the final OpenAI summary!
             var result = await kernel.InvokePromptAsync(userRequest, new KernelArguments(settings));
 
             Console.WriteLine($"\n[AI FINAL RESPONSE]: {result}");

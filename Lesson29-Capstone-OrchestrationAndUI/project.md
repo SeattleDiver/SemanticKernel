@@ -1,4 +1,4 @@
-# Day 29 — Capstone Implementation (Orchestration & UI)
+# Day 29 — Capstone Implementation (Orchestration & Review Loop)
 
 ## What this project builds
 
@@ -12,6 +12,11 @@ both completed and quality-checked by the Reviewer, or a safety cap of five cycl
 `Program.cs` no longer calls agents directly at all — it builds the list and hands control to
 `orchestrator.RunProjectAsync(state)`.
 
+Despite the `OrchestrationAndUI` folder name, this lesson has no graphical or web UI: it is
+still a console app that prompts for a project idea and prints each cycle's progress and the
+final state. The first browser-facing surface arrives on Day 30, which hosts the same
+orchestrator behind a minimal Web API with an interactive Scalar page for trying it.
+
 ## Why it matters in the series
 
 This is the lesson where the series' recurring "blackboard" architecture (a shared
@@ -20,7 +25,7 @@ real feedback loop. Up to now, every agent only ever moved a task forward. Today
 can send a task *backward* — un-completing it and appending its own critique so the Developer
 picks it back up next cycle. That single addition is what turns a linear pipeline into an
 agentic loop, and loops need a termination story. Day 30 will reuse this exact orchestrator
-inside a web UI, so getting the cycle-bounding and state-mutation patterns right here matters
+behind a minimal Web API, so getting the cycle-bounding and state-mutation patterns right here matters
 for what comes next.
 
 ## Core concepts taught

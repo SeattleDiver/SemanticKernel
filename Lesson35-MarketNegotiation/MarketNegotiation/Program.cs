@@ -60,11 +60,10 @@ namespace MarketNegotiation
 
             string marketSignal = "This is the first round; no bids have been submitted yet.";
 
-            // Seeded with a zero bid per participant so a call that fails on round 1 (before
-            // there's any prior bid to fall back to) still has something safe to reuse.
-            var lastKnownBids = participants.ToDictionary(
-                p => p.Name,
-                _ => new Bid { RequestedAmount = 0, Justification = "No bid received yet." });
+            // Only bids that were actually received and parsed are remembered - there is no $0
+            // placeholder seed. A team whose call fails (or whose reply can't be parsed) before it
+            // has ever bid validly has nothing to carry forward, so that round can't settle.
+            var lastValidBids = new Dictionary<string, Bid>();
 
             for (int round = 1; round <= MaxRounds; round++)
             {
@@ -72,8 +71,8 @@ namespace MarketNegotiation
 
                 // Bids are collected one at a time rather than concurrently - a sealed-bid
                 // round doesn't require simultaneity, and each call is still isolated: a
-                // single dropped connection shouldn't crash the round, just carry that
-                // participant's last known bid forward instead.
+                // single dropped connection (or unparseable reply) shouldn't crash the round,
+                // just carry that participant's last valid bid forward instead.
                 var bidsByName = new Dictionary<string, Bid>();
                 foreach (var p in participants)
                 {
@@ -84,19 +83,28 @@ namespace MarketNegotiation
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"  [WARN] {p.Name}'s bid call failed, reusing their last known bid: {ex.Message}");
-                        bid = lastKnownBids[p.Name];
+                        if (!lastValidBids.TryGetValue(p.Name, out Bid? previous))
+                        {
+                            Console.WriteLine($"  [WARN] {p.Name} has no valid bid this round and none to carry forward: {ex.Message}");
+                            continue;
+                        }
+
+                        Console.WriteLine($"  [WARN] {p.Name}'s bid failed, reusing their last valid bid: {ex.Message}");
+                        bid = previous;
                     }
 
                     bidsByName[p.Name] = bid;
-                    lastKnownBids[p.Name] = bid;
+                    lastValidBids[p.Name] = bid;
                     Console.WriteLine($"  {p.Name}: ${bid.RequestedAmount} - {bid.Justification}");
                 }
 
+                // A team without a valid bid can't be part of a settlement: the round only
+                // settles when every team has a valid bid AND the total fits the budget.
+                bool everyTeamBid = bidsByName.Count == participants.Count;
                 (bool fits, decimal total) = MarketCoordinator.CheckFit(bidsByName, TotalBudget);
                 Console.WriteLine($"  Total requested: ${total} (budget: ${TotalBudget})\n");
 
-                if (fits)
+                if (fits && everyTeamBid)
                 {
                     Console.WriteLine("--- ALLOCATION (bids fit the budget as requested) ---");
                     foreach (var (name, bid) in bidsByName)
@@ -115,14 +123,21 @@ namespace MarketNegotiation
                     {
                         Console.WriteLine($"  {name}: ${amount}");
                     }
+                    foreach (var p in participants.Where(p => !bidsByName.ContainsKey(p.Name)))
+                    {
+                        Console.WriteLine($"  {p.Name}: no valid bid received - not allocated");
+                    }
                     return;
                 }
 
                 string asksSummary = string.Join(", ", bidsByName.Select(kv => $"{kv.Key}: ${kv.Value.RequestedAmount}"));
-                marketSignal =
-                    $"Round {round} results: the total requested (${total}) exceeds the ${TotalBudget} " +
-                    $"budget by ${total - TotalBudget}. Current asks were [{asksSummary}]. You must revise " +
-                    "your ask down to help the total fit the budget - holding firm will not be respected.";
+                marketSignal = fits
+                    ? $"Round {round} results: not every team submitted a valid bid, so the round could not " +
+                      $"settle. Current asks were [{asksSummary}], totaling ${total} against the ${TotalBudget} " +
+                      "budget. Submit your bid again."
+                    : $"Round {round} results: the total requested (${total}) exceeds the ${TotalBudget} " +
+                      $"budget by ${total - TotalBudget}. Current asks were [{asksSummary}]. You must revise " +
+                      "your ask down to help the total fit the budget - holding firm will not be respected.";
             }
         }
     }

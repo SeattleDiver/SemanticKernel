@@ -18,7 +18,7 @@ STRICT RULES FOR ALL C# CODE:
    - Explanation (step back through what was just built and why each piece works the way it does)
    - Expected Result
 7. Where a Part 2 lesson (Day 31+) directly closes an orchestration-pattern gap identified against a Part 1 lesson, name that earlier lesson explicitly (e.g., "unlike Day 11's Critic...") so viewers who've followed the whole series see the throughline. This series stays on Semantic Kernel end to end - there is no cross-framework migration callout to write, because we never leave Semantic Kernel.
-8. Each phase should build toward its own capstone, composing pieces introduced earlier in that phase rather than introducing new mechanics at the capstone itself. Part 1 (Days 1-30) already resolves in the Day 27-30 capstone: a GoalRefiner -> Planner -> Developer -> Reviewer pipeline coordinated through a shared `ProjectState` blackboard, deployed as both a console app and a minimal Web API. Part 2 (Days 31-43) resolves in a Day 43 capstone combining hierarchical delegation, event-driven coordination, durable checkpointing, and safety guardrails into one deployable system.
+8. Each phase should build toward its own capstone, composing pieces introduced earlier in that phase rather than introducing new mechanics at the capstone itself. Part 1 (Days 1-30) already resolves in the Day 27-30 capstone: a GoalRefiner -> Planner -> Developer -> Reviewer pipeline coordinated through a shared `ProjectState` blackboard, deployed as both a console app and a controller-based ASP.NET Core Web API. Part 2 (Days 31-43) resolves in a Day 43 capstone combining hierarchical delegation, event-driven coordination, durable checkpointing, and safety guardrails into one deployable system.
 9. Each class should be created in its own .cs file. Never merge enums with classes. Never merge interfaces with classes. Each module should represent only one class. Each class will have XML comments at the top of each class declaration and also inside at each function declaration. Populate these XML comments based on the functionality of the method/class.
 10. Each lesson should be created as a VS2026 console style solution. This includes the presence of a .slnx file, and the project will be loaded by VS2026. Each project should exist at the same level in the root folder as the other Semantic Kernel day projects in this repo. Name each lesson folder `LessonNN-<Name>` with a two-digit day number (e.g. `Lesson39-HierarchicalDelegation`); the lesson's `.docx`, if any, lives inside that folder as `LessonNN-<Name>.docx`.
 11. Never use top-level statements. When creating classes, always include them in the project namespace.
@@ -57,7 +57,8 @@ orchestration, ending in a four-lesson capstone.
 - **Days 27–30 (Capstone I)** — `UniversalProjectManager`: GoalRefiner -> Planner ->
   Developer -> Reviewer agents coordinated through a shared `ProjectState` blackboard,
   extracted into a dedicated `ProjectOrchestrator` with a bounded critic/reviewer rework
-  loop (Day 29), then deployed as both a console app and a minimal Web API (Day 30).
+  loop (Day 29), then deployed as both a console app and a controller-based ASP.NET Core
+  Web API with Scalar documentation (Day 30).
 
 ### Part 2 — Closing the Orchestration-Pattern Gaps (Days 31–43) — in progress
 
@@ -72,8 +73,9 @@ Explanation section for a worked example of exactly this call).
 
 - **Day 31 — Self-Reflection Loop.** One agent drafts, critiques, and revises its own
   output in a closed loop, no second persona - unlike Day 11's Critic.
-- **Day 32 — LLM-Based Fan-In.** Extends Day 7's fan-out: N parallel drafts synthesized by
-  an LLM reducer instead of plain code.
+- **Day 32 — LLM-Based Fan-In.** Extends Day 7's many-calls-then-aggregate pattern (Day 7
+  makes its per-item calls one after another and aggregates them with plain LINQ): N
+  drafts generated concurrently, then synthesized by an LLM reducer instead of plain code.
 - **Day 33 — Voting & Self-Consistency Ensembles.** Samples multiple candidate answers and
   aggregates by vote/consensus rather than synthesis, built on Day 32's fan-out mechanics.
 
@@ -83,7 +85,9 @@ Explanation section for a worked example of exactly this call).
   next based on the conversation so far, replacing Day 18's fixed turn order. SK's native
   `GroupChatOrchestration` (`Agents.Orchestration`, still experimental/preview) proved
   unreliable in live testing - empty agent responses on the majority of turns, a known
-  issue in the framework itself, not this lesson's code. The lesson hand-rolls the same
+  issue in the framework itself, not this lesson's code. That testing was done against the
+  series' original model provider before the OpenAI migration and has not been re-run on
+  OpenAI; the lesson says so. The lesson hand-rolls the same
   moderator-driven selection logic with plain `IChatCompletionService` calls instead.
 - **Day 35 — Negotiation & Market-Based Coordination.** Agents bargain, bid, or resolve
   conflicting goals instead of following a predetermined protocol. Shares scaffolding with

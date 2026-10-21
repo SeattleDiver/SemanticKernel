@@ -12,9 +12,12 @@ namespace VotingEnsembles
         public static string Normalize(string answer) => answer.Trim().TrimStart('$').Trim();
 
         /// <summary>
-        /// Groups the given samples by normalized answer and returns the majority result.
+        /// Groups the given samples by normalized answer and returns the plurality result: the answer with
+        /// the most votes, which need not be more than half of them. A shared top count is reported as a tie.
         /// </summary>
-        /// <exception cref="ArgumentException">Thrown if <paramref name="samples"/> is empty; there is no majority to compute.</exception>
+        /// <param name="samples">The votable samples to tally.</param>
+        /// <returns>The winning answer, whether it was tied for the top count, and the per-answer vote counts.</returns>
+        /// <exception cref="ArgumentException">Thrown if <paramref name="samples"/> is empty; there are no votes to tally.</exception>
         public static ConsensusResult Tally(IReadOnlyList<ReasoningSample> samples)
         {
             if (samples.Count == 0)

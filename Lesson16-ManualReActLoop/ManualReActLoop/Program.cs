@@ -10,34 +10,10 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System;
-using System.ComponentModel;
 using System.Threading.Tasks;
 
 namespace ManualReActLoop
 {
-    /// <summary>Stateful native plugin exposing a mock knowledge-base search and a running count of research steps taken.</summary>
-    public class ResearchPlugin
-    {
-        private int _stepCount = 0;
-
-        /// <summary>Searches the internal knowledge base for technical specs matching the query.</summary>
-        /// <param name="query">The search query.</param>
-        /// <returns>The matching spec, or "Data not found." if the query doesn't match the mock knowledge base.</returns>
-        [KernelFunction("SearchDatabase")]
-        [Description("Searches the internal knowledge base for technical specs.")]
-        public string Search(string query)
-        {
-            _stepCount++;
-            return query.Contains("Battery", StringComparison.OrdinalIgnoreCase) ? "The Quantum-X battery lasts 24 hours." : "Data not found.";
-        }
-
-        /// <summary>Returns how many research steps have been taken so far.</summary>
-        /// <returns>A message stating the total number of <see cref="Search"/> calls made.</returns>
-        [KernelFunction("GetStepCount")]
-        [Description("Returns how many research steps have been taken.")]
-        public string GetCount() => $"Total steps taken: {_stepCount}";
-    }
-
     /// <summary>Entry point that hand-rolls a ReAct (Thought/Action/Observation) loop instead of relying on SK auto-invocation.</summary>
     class Program
     {
@@ -59,7 +35,7 @@ namespace ManualReActLoop
                 You are a ReAct Agent. You MUST follow this format for every turn:
                 THOUGHT: [Your reasoning]
                 ACTION: [The function name to call]
-                Wait for the user to provide the OBSERVATION.
+                The OBSERVATION (the function's result) comes back to you as a tool message.
                 Once you have the answer, provide FINAL ANSWER.");
 
             string goal = "Find the battery life of the Quantum-X and tell me the total steps taken.";

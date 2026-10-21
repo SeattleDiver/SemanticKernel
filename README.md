@@ -75,7 +75,7 @@ Single-agent basics (personas, tool calling, RAG) growing into multi-agent orche
 | 26 | [Evaluator](Lesson26-Evaluator/project.md) | [Evaluator.slnx](Lesson26-Evaluator/Evaluator/Evaluator.slnx) |
 | 27 | [Capstone I: design & architecture](Lesson27-Capstone/project.md) | [UniversalProjectManager.slnx](Lesson27-Capstone/UniversalProjectManager/UniversalProjectManager.slnx) |
 | 28 | [Capstone I: plugins & single agents](Lesson28-Capstone-Plugins/project.md) | [UniversalProjectManager.slnx](Lesson28-Capstone-Plugins/UniversalProjectManager/UniversalProjectManager.slnx) |
-| 29 | [Capstone I: orchestration & UI](Lesson29-Capstone-OrchestrationAndUI/project.md) | [UniversalProjectManager.slnx](Lesson29-Capstone-OrchestrationAndUI/UniversalProjectManager/UniversalProjectManager.slnx) |
+| 29 | [Capstone I: orchestration & review loop](Lesson29-Capstone-OrchestrationAndUI/project.md) | [UniversalProjectManager.slnx](Lesson29-Capstone-OrchestrationAndUI/UniversalProjectManager/UniversalProjectManager.slnx) |
 | 30 | [Capstone I: deployment & review (Web API)](Lesson30-Capstone-DeploymentAndReview/project.md) | [UniversalProjectManager.slnx](Lesson30-Capstone-DeploymentAndReview/UniversalProjectManager/UniversalProjectManager.slnx) |
 
 ## Part 2: Closing the Orchestration-Pattern Gaps (Days 31–43, in progress)

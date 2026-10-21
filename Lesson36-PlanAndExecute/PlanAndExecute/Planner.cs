@@ -74,11 +74,13 @@ namespace PlanAndExecute
         }
 
         /// <summary>
-        /// Fallback plan used when the planner's own JSON response can't be parsed.
+        /// Fallback plan used when the planner's own JSON response can't be parsed. It has no
+        /// steps, which the simulated environment treats as a failed execution (and so a replan).
         /// </summary>
+        /// <returns>A plan with an empty step list.</returns>
         private static ExecutionPlan Empty() => new()
         {
-            Steps = new List<string> { "Failed to parse plan; no steps generated." }
+            Steps = new List<string>()
         };
     }
 }

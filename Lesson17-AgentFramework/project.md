@@ -52,12 +52,14 @@ makes those later, more complex lessons possible.
   error and lets the `while(true)` loop continue so the user can try again.
   This was the one change that met the "would actually crash/block someone
   running the tutorial" bar.
+- **Fixed:** the user-visible typos in the persona and the banner ("bets",
+  "Alwasy", "Tarvel") and the missing space between the first two
+  concatenated `Instructions` strings ("planner.Your").
 - **Left as enhancement opportunities (not defects):** the other items
   in the prior gap analysis — no `CancellationToken` support in the
   interactive loop, no retry/backoff around the model call, no
   `[KernelFunction]` tools attached to the agent, no persistence of chat
-  history across runs, and the minor persona/console text typos (`"bets
-  destinations"`, `"Alwasy"`, `"Tarvel"`) — are all real observations but
+  history across runs — are all real observations but
   are production-hardening or content-polish items rather than things that
   block or break the lesson as written, so they were intentionally left
   untouched.
