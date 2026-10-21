@@ -67,8 +67,8 @@ By the end of this course, you will be able to:
     *   *Concepts:* The Rubric Pattern, Separation of Concerns, Structured Feedback.
 *   **Day 12: The Visionary (Multimodal Agent)**
     *   *Concepts:* Multimodality, `ImageContent`, `ChatMessageContentItemCollection`.
-*   **Day 13: The Dynamic Persona (Handlebars Agent)**
-    *   *Concepts:* Handlebars Engine (`HandlebarsPromptTemplateFactory`), Conditional Logic in Prompts.
+*   **Day 13: Prompt Logic Plugins (Dynamic Persona)**
+    *   *Concepts:* Calling native C# plugin functions from inside a prompt template with Semantic Kernel's default template syntax (`{{UserHelperPlugin.GetTierInstructions $tier}}`), keeping loops and conditionals in C# instead of in the prompt.
 *   **Day 14: The Document QA (Large Context Agent)**
     *   *Concepts:* Context Windows vs. RAG, Instructional Anchoring, Streamlined Token Usage.
 
