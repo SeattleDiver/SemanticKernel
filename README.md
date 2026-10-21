@@ -39,8 +39,7 @@ dotnet run
 
 ## Lesson structure
 
-Each lesson document follows the same template: **Overview, Prerequisites, Setup, Core Concepts, Full Walkthrough / Code, Explanation, Expected Result**. Most lessons from Days 1–30 also include a `.docx` copy of the lesson inside the lesson folder.
-
+Each lesson document follows the same template: **Overview, Prerequisites, Setup, Core Concepts, Full Walkthrough / Code, Explanation, Expected Result**.
 ## Part 1: Foundations & Core Orchestration (Days 1–30)
 
 Single-agent basics (personas, tool calling, RAG) growing into multi-agent orchestration.

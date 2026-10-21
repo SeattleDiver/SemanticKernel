@@ -17,34 +17,34 @@ This video is just the setup. No coding here — by the end of it, you'll have t
 
 *(Slide: Setup)*
 
-Three things, and all three are free.
+Three things. The tools are free; the API is pay-as-you-go.
 
 **1. Visual Studio 2026.**
 Go to `visualstudio.microsoft.com`, and download the **Community edition** — it's free for individual developers, students, and open-source work. When the installer opens, check the **".NET desktop development"** workload. That single checkbox brings in everything we need, including the **.NET 10 SDK** — this series targets .NET 10, which is a Long-Term-Support release Microsoft will support into November 2028, so you're building on stable ground.
 
 If you'd rather use VS Code instead of full Visual Studio, that works too — install the **C# Dev Kit** extension and the standalone **.NET 10 SDK** from `dotnet.microsoft.com/download/dotnet/10.0`. Every lesson in this series runs equally well from either editor, or from the command line with `dotnet run`.
 
-**2. A Google Gemini API key.**
-This course uses Google's Gemini models as the LLM behind every agent we build. Getting a key takes about a minute:
-- Go to `aistudio.google.com/apikey`.
-- Sign in with a Google account.
-- Click **"Create API key."**
-- Copy the key — it starts with `AIza` — and treat it like a password. Don't paste it into code, don't commit it to source control.
+**2. An OpenAI API key.**
+This course uses OpenAI's models as the LLM behind every agent we build, through Semantic Kernel's native OpenAI connector. Getting a key takes about a minute:
+- Go to `platform.openai.com/api-keys`.
+- Sign in or create an OpenAI account.
+- Click **"Create new secret key."**
+- Copy the key — it starts with `sk-` — and treat it like a password. Don't paste it into code, don't commit it to source control.
 
-The free tier requires no billing information and gives you real, usable quota on the Gemini Flash models we'll be using throughout the series.
+The OpenAI API is billed separately from a ChatGPT subscription, so add a payment method or a small amount of prepaid credit under **Settings → Billing** before your first call. The models we use, `gpt-4.1-mini` for chat and `text-embedding-3-small` for embeddings, are among the cheapest OpenAI offers, so working through the whole series costs very little.
 
 **3. Set the key as an environment variable, once.**
-Every single project in this repository reads the same environment variable — `GEMINI_API_KEY` — so you only need to set this up one time, and every lesson from Day 1 to Day 30 will pick it up automatically.
+Every single project in this repository reads the same environment variable — `OPENAI_API_KEY` — so you only need to set this up one time, and every lesson will pick it up automatically.
 
 On Windows, open PowerShell and run:
 ```
-setx GEMINI_API_KEY "your-key-here"
+setx OPENAI_API_KEY "your-key-here"
 ```
 Then close and reopen your terminal (or Visual Studio) so it picks up the new variable.
 
 On macOS or Linux, add this to your shell profile:
 ```
-export GEMINI_API_KEY="your-key-here"
+export OPENAI_API_KEY="your-key-here"
 ```
 
 That's it. Tools installed, key generated, environment configured.
@@ -61,13 +61,13 @@ A quick map before we dive in, so nothing here surprises you.
 
 **Every lesson is its own standalone project.** You'll see folders named `Lesson01-Conversationalist`, `Lesson02-Summarizer`, `Lesson03-FormatTranslator`, and so on, all the way through `Lesson30-Capstone-DeploymentAndReview`. There is intentionally no single giant solution file tying them all together — each day is a clean, self-contained console application (or, in the last lesson, a web API). When you're ready to work on a given day, open that day's folder — and just that folder — in Visual Studio 2026.
 
-**Every lesson follows the same skeleton.** You'll build a `Kernel` using `Kernel.CreateBuilder()`, register a connection to Gemini with one line, and then layer that day's specific technique on top — a plugin, a planner, a filter, a second agent. Learn the skeleton once on Day 1, and every later lesson will feel familiar.
+**Every lesson follows the same skeleton.** You'll build a `Kernel` using `Kernel.CreateBuilder()`, register a connection to OpenAI with one line (`AddOpenAIChatCompletion`), and then layer that day's specific technique on top — a plugin, a planner, a filter, a second agent. Learn the skeleton once on Day 1, and every later lesson will feel familiar.
 
-**Every lesson reads your API key the same way.** `Environment.GetEnvironmentVariable("GEMINI_API_KEY")` — no config files with secrets in them, nothing to change per-project. Set it once in Section 1, and it works for all 31 lessons (Day 8a additionally reads `PINECONE_API_KEY`, as noted above).
+**Every lesson reads your API key the same way.** `Environment.GetEnvironmentVariable("OPENAI_API_KEY")` — no config files with secrets in them, nothing to change per-project. Set it once in Section 1, and it works for all 31 lessons (Day 8a additionally reads `PINECONE_API_KEY`, as noted above).
 
 **Every folder has a `project.md`.** If you want a written summary of exactly what a given lesson builds and why — independent of this video — that file is your reference.
 
-One honest note: the model behind every lesson is `gemini-2.5-flash`. It's fast, it's on the free tier, and it's consistent — so what you're learning is the *pattern*, not a specific model's quirks. If you swap in a different Gemini model later, the code doesn't change, only the string you pass to the connector.
+One honest note: the model behind every lesson is `gpt-4.1-mini`, and the memory and retrieval lessons use `text-embedding-3-small` for embeddings. They're fast, inexpensive, and consistent — so what you're learning is the *pattern*, not a specific model's quirks. If you swap in a different OpenAI model later, the code doesn't change, only the string you pass to the connector.
 
 ---
 

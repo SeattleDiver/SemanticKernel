@@ -4,7 +4,7 @@
 
 **Course Duration:** 31 Lessons, numbered Day 1–30 (including Day 8a)  
 **Language:** C# / .NET 10  
-**Primary AI Models:** Google Gemini (`gemini-2.5-flash`), `gemini-embedding-001`  
+**Primary AI Models:** OpenAI (`gpt-4.1-mini`), `text-embedding-3-small`  
 **Focus:** Building production-ready, autonomous, multi-agent workflows.
 
 ---
@@ -28,10 +28,10 @@ By the end of this course, you will be able to:
 *   **Framework:** .NET 10 SDK
 *   **Core Packages:** 
     *   `Microsoft.SemanticKernel`
-    *   `Microsoft.SemanticKernel.Connectors.Google`
+    *   `Microsoft.SemanticKernel.Connectors.OpenAI`
     *   `Microsoft.Extensions.AI`
     *   `Microsoft.SemanticKernel.Connectors.Pinecone` (Day 8a only)
-*   **Tools:** Visual Studio 2026 (or VS Code + C# Dev Kit), Google Gemini API Key (`GEMINI_API_KEY`), and a free Pinecone API Key (`PINECONE_API_KEY`) for Day 8a only.
+*   **Tools:** Visual Studio 2026 (or VS Code + C# Dev Kit), OpenAI API Key (`OPENAI_API_KEY`), and a free Pinecone API Key (`PINECONE_API_KEY`) for Day 8a only.
 *   **Project layout:** each `DayN` folder is a standalone, independent project — there is no single solution file tying them together. Open the folder for the lesson you're on.
 
 ---
@@ -54,9 +54,9 @@ By the end of this course, you will be able to:
 *   **Day 6: The File Manager (OS Agent)**
     *   *Concepts:* Side-Effects, System IO, Sandboxing Security.
 *   **Day 7: The Data Analyst (Extraction Agent)**
-    *   *Concepts:* Structured Outputs, `ResponseMimeType`, `ResponseSchema`, JSON Deserialization to C# Objects, LINQ Aggregation of Typed Results.
+    *   *Concepts:* Structured Outputs, `ResponseFormat` with a C# `Type`, JSON Deserialization to C# Objects, LINQ Aggregation of Typed Results.
 *   **Day 8: The Librarian (Basic RAG Agent)**
-    *   *Concepts:* `Microsoft.Extensions.AI`, `IEmbeddingGenerator`, `gemini-embedding-001`, Cosine Similarity Math (computed by hand, no vector database).
+    *   *Concepts:* `Microsoft.Extensions.AI`, `IEmbeddingGenerator`, `text-embedding-3-small`, Cosine Similarity Math (computed by hand, no vector database).
 *   **Day 8a: The Cloud Librarian (Pinecone Vector Database)**
     *   *Concepts:* `IVectorStore`, `Microsoft.Extensions.VectorData` Record Attributes (`VectorStoreKey`, `VectorStoreData`, `VectorStoreVector`), Cloud Vector Search via Pinecone.
 *   **Day 9: The Interviewer (Context-Aware Agent)**
@@ -84,9 +84,9 @@ By the end of this course, you will be able to:
 *   **Day 17: Semantic Kernel Agent Framework Basics**
     *   *Concepts:* `ChatCompletionAgent`, Agent Encapsulation.
 *   **Day 18: Native Multi-Agent Orchestration (Stable Pattern)**
-    *   *Concepts:* Persona Swapping, Shared `ChatHistory`, Google Gemini Protocol Alignment (`User -> Assistant` strict alternation).
+    *   *Concepts:* Persona Swapping, Shared `ChatHistory`, Explicit Hand-off Cues (a `User` "nudge" between agent turns).
 *   **Day 19: The Coordinator (Advanced Orchestration)**
-    *   *Concepts:* Structured JSON Routing (`ResponseMimeType`), Chain-of-Thought Meta-Agents, "Ghost" Nudges, HTTP Retry Resilience (`DelegatingHandler`).
+    *   *Concepts:* Structured JSON Routing (`ResponseFormat`), Chain-of-Thought Meta-Agents, "Ghost" Nudges, HTTP Retry Resilience (`DelegatingHandler`).
 *   **Day 20: Human-in-the-Loop (Approval Orchestration)**
     *   *Concepts:* Human Gatekeepers, Advisory Agents, Natural Protocol Alignment via user feedback.
 *   **Day 21: Semantic Routing**

@@ -47,7 +47,7 @@ portable into a completely different hosting model.
   hand `ProjectOrchestrator`'s constructor a collection containing one of
   each, with no manual list-building.
 - **Controller as a thin adapter** — `ProjectController` knows nothing about
-  Gemini, prompts, or task lists; it validates input, builds a request-scoped
+  OpenAI, prompts, or task lists; it validates input, builds a request-scoped
   `ProjectState`, calls the orchestrator, and returns JSON.
 - **OpenAPI/Scalar documentation** — `AddOpenApi()` + `MapScalarApiReference()`
   give students a browsable, "try it out" UI instead of hand-written `curl`
@@ -76,7 +76,7 @@ copies of the affected files), so each fix below was applied twice:
   adding the missing `$`, and updated the docx's Complete Code and Expected
   Output sections to match.
 - **No exception handling around the orchestration run** — in the console
-  app, an unhandled exception from `RunProjectAsync` (e.g., a Gemini network
+  app, an unhandled exception from `RunProjectAsync` (e.g., an OpenAI network
   error) would crash the whole session with a raw stack trace; in the Web
   API, the same exception would bubble up through `ProjectController` as an
   unhelpful generic HTTP 500. Added a `try/catch` around the orchestrator

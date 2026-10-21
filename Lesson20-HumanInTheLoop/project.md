@@ -45,7 +45,7 @@ orchestrations (multi-agent, coordinator) can drop in as a safety gate.
 
 ## Cleanup notes
 
-- **Added error handling around the Gemini call.** `AiWorker.GenerateDraftAsync`
+- **Added error handling around the OpenAI call.** `AiWorker.GenerateDraftAsync`
   previously called `_chatService.GetChatMessageContentAsync(history)` with
   no try/catch, so any transient network failure, rate limit, or API error
   would throw straight out of `Main` and crash the whole approval workflow

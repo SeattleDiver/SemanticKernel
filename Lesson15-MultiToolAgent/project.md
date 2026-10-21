@@ -49,7 +49,7 @@ for them here.
 ## Cleanup notes
 
 - Wrapped the `kernel.InvokePromptAsync(...)` call in `Program.cs` in a
-  `try/catch`. Previously, any failure in the Gemini API call or in the
+  `try/catch`. Previously, any failure in the OpenAI API call or in the
   auto-invoked tool round trips behind it (network error, API error, a tool
   throwing) would crash the entire console app with an unhandled exception.
   Since `AutoInvokeKernelFunctions` drives multiple hidden round trips per
